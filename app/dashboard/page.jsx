@@ -1,14 +1,12 @@
-// app/dashboard/page.jsx
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { FaUser, FaCar, FaHistory, FaSignOutAlt, FaCalendarAlt, FaMapMarkerAlt, FaCreditCard } from 'react-icons/fa';
 
-// Helper to fetch data on the server with cookies/headers forwarded
+// Force dynamic rendering to skip build-time fetching
+export const dynamic = 'force-dynamic';
+
 async function getDashboardData() {
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
-    
-    // In a real app, you must forward cookies/headers here for auth to work
-    // const headers = { Cookie: cookies().toString() };
     
     try {
         const [userRes, bookingsRes] = await Promise.all([
@@ -16,7 +14,7 @@ async function getDashboardData() {
             fetch(`${baseUrl}/api/bookings`, { cache: 'no-store' })
         ]);
 
-        if (!userRes.ok) return null; // Trigger redirect
+        if (!userRes.ok) return null; 
 
         const user = await userRes.json();
         const bookings = await bookingsRes.json();
@@ -31,14 +29,12 @@ async function getDashboardData() {
 export default async function DashboardPage() {
     const data = await getDashboardData();
 
-    // Secure Redirect if no session/user found
     if (!data?.user) {
-        redirect('/login'); // changed from /not-authorized for better UX
+        redirect('/login');
     }
 
     const { user, bookings } = data;
 
-    // Calculate Stats
     const upcoming = bookings.filter(b => b.status === 'upcoming');
     const past = bookings.filter(b => b.status === 'completed');
     const totalSpent = past.reduce((acc, curr) => acc + (Number(curr.total) || 0), 0);
@@ -47,7 +43,6 @@ export default async function DashboardPage() {
         <main className="min-h-screen bg-gray-50 py-8">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 
-                {/* Page Header */}
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
                     <div>
                         <h1 className="text-3xl font-bold text-gray-900">My Dashboard</h1>
@@ -60,7 +55,6 @@ export default async function DashboardPage() {
 
                 <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
                     
-                    {/* LEFT SIDEBAR: Profile Card */}
                     <aside className="lg:col-span-1 space-y-6">
                         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 text-center">
                             <div className="w-24 h-24 bg-green-100 text-green-600 rounded-full flex items-center justify-center text-3xl font-bold mx-auto mb-4">
@@ -86,10 +80,8 @@ export default async function DashboardPage() {
                         </div>
                     </aside>
 
-                    {/* MAIN CONTENT Area */}
                     <div className="lg:col-span-3 space-y-8">
                         
-                        {/* 1. Stats Grid */}
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                             <StatCard 
                                 label="Active Bookings" 
@@ -111,7 +103,6 @@ export default async function DashboardPage() {
                             />
                         </div>
 
-                        {/* 2. Upcoming Bookings */}
                         <section className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
                             <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
                                 <h3 className="font-bold text-gray-900 flex items-center gap-2">
@@ -132,7 +123,6 @@ export default async function DashboardPage() {
                             )}
                         </section>
 
-                        {/* 3. Past History */}
                         <section className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
                             <div className="px-6 py-4 border-b border-gray-100">
                                 <h3 className="font-bold text-gray-900 flex items-center gap-2">
@@ -160,8 +150,6 @@ export default async function DashboardPage() {
     );
 }
 
-// --- SUB COMPONENTS (Local to file for simplicity) ---
-
 function StatCard({ label, value, icon, color }) {
     return (
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4">
@@ -180,13 +168,11 @@ function BookingRow({ booking, isUpcoming }) {
     return (
         <div className="p-6 hover:bg-gray-50 transition-colors flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="flex items-start gap-4">
-                {/* Car Icon Placeholder */}
                 <div className="w-16 h-16 bg-gray-200 rounded-lg flex-shrink-0 flex items-center justify-center text-gray-400">
                     <FaCar />
                 </div>
                 <div>
                     <h4 className="font-bold text-gray-900 text-lg">
-                        {/* If you have car_name join, use it, otherwise show ID */}
                         {booking.car_name || `Vehicle #${booking.car_id}`}
                     </h4>
                     <div className="text-sm text-gray-500 mt-1 space-y-1">

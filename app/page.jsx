@@ -5,12 +5,15 @@ import Features from '../components/Features';
 import Testimonials from '../components/Testimonials';
 import CarCard from '../components/CarCard';
 
-// Fetch data directly in the Server Component
+// Force dynamic rendering to skip build-time fetching
+export const dynamic = 'force-dynamic';
+
 async function getFeaturedCars() {
     try {
         const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+        // In production, ensure your BASE_URL is set correctly in Vercel env vars
         const res = await fetch(`${baseUrl}/api/cars?limit=3&featured=true`, { 
-            cache: 'no-store' // Ensure fresh data, or use 'force-cache' with revalidation
+            cache: 'no-store' 
         });
         
         if (!res.ok) return [];
@@ -26,18 +29,14 @@ export default async function HomePage() {
 
     return (
         <main className="bg-white min-h-screen">
-            
-            {/* 1. Hero Section (Search & Impact) */}
             <HeroSection />
 
-            {/* 2. Brand Logos / Trust Bar (Optional visual separator) */}
             <div className="border-b border-gray-100 bg-gray-50/50 py-8">
                 <div className="max-w-7xl mx-auto px-6 text-center">
                     <p className="text-sm font-semibold text-gray-400 uppercase tracking-widest mb-4">
                         Trusted by companies like
                     </p>
                     <div className="flex flex-wrap justify-center gap-8 md:gap-16 opacity-50 grayscale hover:grayscale-0 transition-all duration-500">
-                        {/* Placeholders for logos - replace with SVGs or Images */}
                         <span className="text-xl font-bold text-gray-600">TravelCo</span>
                         <span className="text-xl font-bold text-gray-600">ZambiaTours</span>
                         <span className="text-xl font-bold text-gray-600">SafariX</span>
@@ -46,7 +45,6 @@ export default async function HomePage() {
                 </div>
             </div>
 
-            {/* 3. Popular Fleet Section */}
             <section className="py-20 max-w-7xl mx-auto px-6 lg:px-8">
                 <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-4">
                     <div>
@@ -66,9 +64,6 @@ export default async function HomePage() {
                 {featuredCars.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                         {featuredCars.map((car) => (
-                            // We don't pass onCompare here since it's the home page. 
-                            // The CarCard will render the button but clicking it won't do anything, 
-                            // or we can wrap this in a Client Component if we really need Compare functionality here.
                             <CarCard key={car.id} car={car} />
                         ))}
                     </div>
@@ -79,13 +74,11 @@ export default async function HomePage() {
                 )}
             </section>
 
-            {/* 4. Features Section */}
             <Features 
                 title="Experience the Difference"
                 subtitle="We don't just rent cars; we provide the freedom to explore Zambia with confidence."
             />
 
-            {/* 5. How It Works (Steps) */}
             <section className="bg-gray-900 text-white py-20">
                 <div className="max-w-7xl mx-auto px-6 lg:px-8">
                     <div className="text-center mb-16">
@@ -93,10 +86,8 @@ export default async function HomePage() {
                     </div>
                     
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-12 text-center relative">
-                        {/* Connecting Line (Desktop) */}
                         <div className="hidden md:block absolute top-12 left-1/6 right-1/6 h-0.5 bg-gray-700 -z-0"></div>
 
-                        {/* Step 1 */}
                         <div className="relative z-10">
                             <div className="w-24 h-24 bg-green-600 rounded-full flex items-center justify-center text-3xl font-bold mx-auto mb-6 border-8 border-gray-800 shadow-xl">
                                 1
@@ -105,7 +96,6 @@ export default async function HomePage() {
                             <p className="text-gray-400">Choose your car, dates, and pickup location using our simple search tool.</p>
                         </div>
 
-                        {/* Step 2 */}
                         <div className="relative z-10">
                             <div className="w-24 h-24 bg-gray-800 rounded-full flex items-center justify-center text-3xl font-bold mx-auto mb-6 border-8 border-gray-700 shadow-xl">
                                 2
@@ -114,7 +104,6 @@ export default async function HomePage() {
                             <p className="text-gray-400">Meet us at the airport or our Lusaka office. We'll hand over the keys in minutes.</p>
                         </div>
 
-                        {/* Step 3 */}
                         <div className="relative z-10">
                             <div className="w-24 h-24 bg-gray-800 rounded-full flex items-center justify-center text-3xl font-bold mx-auto mb-6 border-8 border-gray-700 shadow-xl">
                                 3
@@ -126,13 +115,10 @@ export default async function HomePage() {
                 </div>
             </section>
 
-            {/* 6. Testimonials */}
             <Testimonials />
 
-            {/* 7. Final CTA */}
             <section className="py-20 px-6">
                 <div className="max-w-5xl mx-auto bg-green-700 rounded-3xl p-12 text-center text-white shadow-2xl relative overflow-hidden">
-                    {/* Background Pattern */}
                     <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none">
                         <svg className="h-full w-full" viewBox="0 0 100 100" preserveAspectRatio="none">
                             <path d="M0 100 C 20 0 50 0 100 100 Z" fill="white" />
