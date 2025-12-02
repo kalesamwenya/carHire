@@ -2,7 +2,7 @@
 
 import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import BookingWizard from '../../components/BookingWizard';
+import BookingWizard from '../../../components/BookingWizard';
 import { FaSpinner, FaCar } from 'react-icons/fa';
 
 // SEO Metadata (Note: in a 'use client' file, metadata works differently, 

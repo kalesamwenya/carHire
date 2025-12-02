@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { FaGasPump, FaCogs, FaUsers, FaDoorOpen, FaCheckCircle, FaChevronLeft, FaSnowflake, FaBluetooth, FaMapMarkedAlt } from 'react-icons/fa';
-import ErrorCard from '../../../components/ErrorCard';
+import ErrorCard from '../../../../components/ErrorCard';
 
 async function getCar(id) {
     try {

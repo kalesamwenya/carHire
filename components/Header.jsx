@@ -3,11 +3,13 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
-import { FaBars, FaTimes } from 'react-icons/fa';
+import { FaBars, FaTimes, FaUser } from 'react-icons/fa';
+import { useSession } from 'next-auth/react';
 
 export default function Header() {
     const [open, setOpen] = useState(false);
     const pathname = usePathname();
+    const { data: session, status } = useSession();
 
     // Centralized links configuration
     const navLinks = [
@@ -18,37 +20,65 @@ export default function Header() {
 
     return (
         // Added sticky top-0 and z-50 to keep header visible on scroll
-        <header className="sticky top-0 z-50 bg-white shadow-sm">
+        <header className="sticky top-0 z-50 bg-white border-b border-gray-100 shadow-sm">
             <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
                 {/* Logo */}
-                <Link href="/" className="text-xl font-bold text-green-700 tracking-tight">
+                <Link href="/" className="text-xl font-bold text-green-700 tracking-tight flex items-center gap-2">
                     CarHire
                 </Link>
 
                 {/* Desktop Navigation */}
-                <nav className="hidden md:flex gap-8 items-center text-sm font-medium">
-                    {navLinks.map((link) => (
-                        <Link
-                            key={link.name}
-                            href={link.href}
-                            className={`transition-colors duration-200 ${
-                                pathname === link.href 
-                                    ? 'text-green-700' 
-                                    : 'text-gray-600 hover:text-green-700'
-                            }`}
-                        >
-                            {link.name}
-                        </Link>
-                    ))}
-                    
-                    {/* CTA Button separated from standard links */}
-                    <Link 
-                        href="/dashboard" 
-                        className="px-4 py-2 bg-green-700 text-white rounded-md text-sm hover:bg-green-800 transition-colors shadow-sm"
-                    >
-                        Dashboard
-                    </Link>
-                </nav>
+                <div className="hidden md:flex items-center gap-8">
+                    <nav className="flex gap-6 text-sm font-medium">
+                        {navLinks.map((link) => (
+                            <Link
+                                key={link.name}
+                                href={link.href}
+                                className={`transition-colors duration-200 ${
+                                    pathname === link.href
+                                        ? 'text-green-700'
+                                        : 'text-gray-600 hover:text-green-700'
+                                }`}
+                            >
+                                {link.name}
+                            </Link>
+                        ))}
+                    </nav>
+
+                    {/* Auth Actions (Desktop) */}
+                    <div className="flex items-center gap-4 pl-4 border-l border-gray-200">
+                        {status === 'loading' ? (
+                            <div className="w-24 h-8 bg-gray-100 rounded animate-pulse"></div>
+                        ) : session ? (
+                            <Link
+                                href="/dashboard"
+                                className="flex items-center gap-2 pl-1 pr-3 py-1 rounded-full border border-gray-200 hover:border-green-600 hover:bg-green-50 transition-all group"
+                            >
+                                <div className="w-8 h-8 rounded-full bg-green-100 text-green-700 flex items-center justify-center font-bold text-sm">
+                                    {session.user?.name?.[0] || <FaUser size={12} />}
+                                </div>
+                                <span className="text-sm font-medium text-gray-700 group-hover:text-green-800">
+                                    {session.user?.name?.split(' ')[0] || 'Dashboard'}
+                                </span>
+                            </Link>
+                        ) : (
+                            <>
+                                <Link
+                                    href="/auth/signin"
+                                    className="text-sm font-medium text-gray-600 hover:text-green-700 transition-colors"
+                                >
+                                    Log in
+                                </Link>
+                                <Link
+                                    href="/auth/signup"
+                                    className="px-4 py-2 bg-green-700 text-white rounded-md text-sm font-medium hover:bg-green-800 transition-colors shadow-sm"
+                                >
+                                    Sign up
+                                </Link>
+                            </>
+                        )}
+                    </div>
+                </div>
 
                 {/* Mobile Menu Button */}
                 <button
@@ -70,22 +100,50 @@ export default function Header() {
                                 href={link.href}
                                 onClick={() => setOpen(false)}
                                 className={`block text-sm font-medium ${
-                                    pathname === link.href 
-                                        ? 'text-green-700' 
+                                    pathname === link.href
+                                        ? 'text-green-700'
                                         : 'text-gray-600'
                                 }`}
                             >
                                 {link.name}
                             </Link>
                         ))}
+
                         <hr className="border-gray-100" />
-                        <Link 
-                            href="/dashboard" 
-                            onClick={() => setOpen(false)}
-                            className="block text-center px-4 py-2 bg-green-700 text-white rounded text-sm hover:bg-green-800"
-                        >
-                            Dashboard
-                        </Link>
+
+                        {/* Mobile Auth Actions */}
+                        {session ? (
+                            <Link
+                                href="/dashboard"
+                                onClick={() => setOpen(false)}
+                                className="flex items-center gap-3 px-4 py-3 bg-gray-50 rounded-lg"
+                            >
+                                <div className="w-8 h-8 rounded-full bg-green-100 text-green-700 flex items-center justify-center font-bold">
+                                    {session.user?.name?.[0] || 'U'}
+                                </div>
+                                <div>
+                                    <p className="text-sm font-semibold text-gray-900">{session.user?.name}</p>
+                                    <p className="text-xs text-green-600">Go to Dashboard</p>
+                                </div>
+                            </Link>
+                        ) : (
+                            <div className="grid grid-cols-2 gap-3">
+                                <Link
+                                    href="/signin"
+                                    onClick={() => setOpen(false)}
+                                    className="block text-center px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50"
+                                >
+                                    Log in
+                                </Link>
+                                <Link
+                                    href="/signup"
+                                    onClick={() => setOpen(false)}
+                                    className="block text-center px-4 py-2.5 bg-green-700 text-white rounded-lg text-sm font-medium hover:bg-green-800"
+                                >
+                                    Sign up
+                                </Link>
+                            </div>
+                        )}
                     </div>
                 </div>
             )}

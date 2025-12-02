@@ -1,9 +1,9 @@
 import Link from 'next/link';
 import { FaArrowRight } from 'react-icons/fa';
-import HeroSection from '../components/HeroSection';
-import Features from '../components/Features';
-import Testimonials from '../components/Testimonials';
-import CarCard from '../components/CarCard';
+import HeroSection from '../../components/HeroSection';
+import Features from '../../components/Features';
+import Testimonials from '../../components/Testimonials';
+import CarCard from '../../components/CarCard';
 
 // Force dynamic rendering to skip build-time fetching
 export const dynamic = 'force-dynamic';
