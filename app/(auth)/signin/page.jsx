@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { toast, Toaster } from 'react-hot-toast';
 import { FaEnvelope, FaLock, FaSpinner } from 'react-icons/fa';
-import AuthInput from '../../../components/AuthInput';
+import AuthInput from '@/components/auth/AuthInput';
 
 export default function SignInPage() {
     const router = useRouter();

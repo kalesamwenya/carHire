@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { toast, Toaster } from 'react-hot-toast';
 import { FaUser, FaEnvelope, FaLock, FaSpinner } from 'react-icons/fa';
-import AuthInput from '../../../components/auth/AuthInput';
+import AuthInput from '@/components/auth/AuthInput';
 
 export default function SignUpPage() {
     const router = useRouter();
