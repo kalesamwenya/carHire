@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { toast, Toaster } from 'react-hot-toast';
 import { FaEnvelope, FaLock, FaSpinner } from 'react-icons/fa';
-import AuthInput from '../../../components/auth/AuthInput';
+import AuthInput from '../../../components/AuthInput';
 
 export default function SignInPage() {
     const router = useRouter();
@@ -26,14 +26,14 @@ export default function SignInPage() {
 
             if (result?.error) {
                 toast.error("Invalid email or password");
+                setLoading(false);
             } else {
                 toast.success("Welcome back!");
-                router.push('/dashboard');
-                router.refresh();
+                // Force a hard redirect to ensure session cookies are recognized by the server
+                window.location.href = '/dashboard';
             }
         } catch (error) {
             toast.error("Something went wrong. Please try again.");
-        } finally {
             setLoading(false);
         }
     };
@@ -51,7 +51,7 @@ export default function SignInPage() {
                 </h2>
                 <p className="mt-2 text-center text-sm text-gray-600">
                     Or{' '}
-                    <Link href="/signup" className="font-medium text-green-600 hover:text-green-500">
+                    <Link href="/auth/signup" className="font-medium text-green-600 hover:text-green-500">
                         create a new account
                     </Link>
                 </p>
@@ -64,7 +64,7 @@ export default function SignInPage() {
                         <AuthInput
                             label="Email address"
                             type="email"
-                            placeholder="you@example.com"
+                            placeholder="kaleb@example.com" // Updated placeholder to match default user
                             value={form.email}
                             onChange={(e) => setForm({...form, email: e.target.value})}
                             icon={FaEnvelope}
@@ -73,7 +73,7 @@ export default function SignInPage() {
                         <AuthInput
                             label="Password"
                             type="password"
-                            placeholder="••••••••"
+                            placeholder="password" // Updated placeholder
                             value={form.password}
                             onChange={(e) => setForm({...form, password: e.target.value})}
                             icon={FaLock}
