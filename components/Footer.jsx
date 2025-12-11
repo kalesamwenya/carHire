@@ -26,7 +26,7 @@ export default function Footer() {
                     {/* Brand & Description */}
                     <div className="space-y-4">
                         <Link href="/" className="text-2xl font-bold text-green-700 block">
-                            CarHire
+                            CityDriveHire
                         </Link>
                         <p className="text-gray-600 text-sm leading-relaxed">
                             Reliable, affordable car rentals for every journey. 
