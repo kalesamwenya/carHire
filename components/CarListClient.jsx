@@ -9,12 +9,11 @@ import CarCompare from './CarCompare';
 
 export default function CarListClient({ cars = [] }) {
     const [filters, setFilters] = useState({});
-    const [compareIds, setCompareIds] = useState([]); // Store IDs only
+    const [compareIds, setCompareIds] = useState([]);
     const [showMobileFilters, setShowMobileFilters] = useState(false);
 
     // Toggle Logic
     const toggleCompare = (id, e) => {
-        // Prevent clicking the card link if the button is inside one
         if(e) { e.preventDefault(); e.stopPropagation(); }
 
         setCompareIds(prev => {
@@ -34,8 +33,7 @@ export default function CarListClient({ cars = [] }) {
         setCompareIds(prev => prev.filter(x => x !== id));
     };
 
-    // Derived State: Get the actual car objects for the comparison widget
-    // This removes the need for CarCompare to fetch data!
+    // Derived State
     const selectedCars = useMemo(() => {
         return cars.filter(c => compareIds.includes(c.id));
     }, [cars, compareIds]);
@@ -53,12 +51,20 @@ export default function CarListClient({ cars = [] }) {
     }, [cars, filters]);
 
     return (
-        <div className="relative">
+        /* UPDATED WRAPPER:
+           1. bg-gray-50: Forces light background (overrides any global black/dark theme).
+           2. min-h-screen: Ensures the color fills the whole mobile screen.
+           3. p-4: Adds padding on mobile so content isn't stuck to edges.
+           4. lg:p-0 / lg:bg-transparent: Resets on desktop if you want the parent layout to handle it,
+              or keep bg-gray-50 if you want consistency.
+        */
+        <div className="relative w-full bg-gray-50 min-h-screen p-4 py-30 lg:p-0 lg:min-h-0 lg:bg-transparent text-gray-900">
+
             {/* Mobile Filter Toggle */}
-            <div className="lg:hidden mb-4">
-                <button 
+            <div className="lg:hidden mb-6">
+                <button
                     onClick={() => setShowMobileFilters(!showMobileFilters)}
-                    className="flex items-center gap-2 bg-white border border-gray-300 px-4 py-2 rounded-lg text-sm font-medium shadow-sm w-full justify-center"
+                    className="flex items-center gap-2 bg-white border border-gray-300 px-4 py-3 rounded-lg text-sm font-bold shadow-sm w-full justify-center hover:bg-gray-50 transition-colors text-gray-800"
                 >
                     <FaFilter className="text-green-600" />
                     {showMobileFilters ? 'Hide Filters' : 'Show Filters'}
@@ -83,21 +89,22 @@ export default function CarListClient({ cars = [] }) {
                     </div>
 
                     {filtered.length > 0 ? (
-                        <div className="grid grid-cols-2 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
                             {filtered.map(car => (
-                                <CarCard 
-                                    key={car.id} 
-                                    car={car} 
-                                    onCompare={(e) => toggleCompare(car.id, e)} 
-                                    isComparing={compareIds.includes(car.id)} 
+                                <CarCard
+                                    key={car.id}
+                                    car={car}
+                                    onCompare={(e) => toggleCompare(car.id, e)}
+                                    isComparing={compareIds.includes(car.id)}
                                 />
                             ))}
                         </div>
                     ) : (
-                        <div className="bg-gray-50 rounded-xl p-12 text-center border-2 border-dashed border-gray-200">
+                        <div className="bg-white rounded-xl p-12 text-center border-2 border-dashed border-gray-300 shadow-sm">
                             <FaSadTear className="mx-auto text-4xl text-gray-400 mb-4" />
                             <h3 className="text-lg font-medium text-gray-900">No cars found</h3>
-                            <button onClick={() => setFilters({})} className="mt-6 text-green-700 font-medium hover:underline">
+                            <p className="text-gray-500 mb-6">Try adjusting your search criteria.</p>
+                            <button onClick={() => setFilters({})} className="text-green-600 font-bold hover:underline">
                                 Clear all filters
                             </button>
                         </div>
@@ -105,11 +112,11 @@ export default function CarListClient({ cars = [] }) {
                 </div>
             </div>
 
-            {/* Comparison Widget - Passing the OBJECTS now, not just IDs */}
-            <CarCompare 
-                cars={selectedCars} 
-                onClose={() => setCompareIds([])} 
-                onRemove={removeFromCompare} 
+            {/* Comparison Widget */}
+            <CarCompare
+                cars={selectedCars}
+                onClose={() => setCompareIds([])}
+                onRemove={removeFromCompare}
             />
         </div>
     );

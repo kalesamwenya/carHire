@@ -3,15 +3,14 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { FaArrowLeft, FaGem, FaUser, FaBriefcase, FaEnvelope, FaLock } from "react-icons/fa";
-import { toast } from "react-hot-toast";
+import { FaArrowLeft, FaCarSide, FaUser, FaBriefcase, FaEnvelope, FaLock } from "react-icons/fa";
+import { toast, Toaster } from "react-hot-toast";
 import AuthInput from '@/components/auth/AuthInput';
 import AuthShell from '@/components/auth/AuthShell';
 
 export default function SignUpPage() {
     const router = useRouter();
 
-    // 1. Added 'role' to state
     const [form, setForm] = useState({
         name: "",
         email: "",
@@ -70,7 +69,7 @@ export default function SignUpPage() {
                     name: form.name,
                     email: form.email.trim().toLowerCase(),
                     password: form.password,
-                    role: form.role // 2. Send role to API
+                    role: form.role
                 })
             });
 
@@ -91,10 +90,20 @@ export default function SignUpPage() {
 
     const BrandingContent = ({ isMobile }) => (
         <div className={`relative z-10 max-w-md text-left transition-all duration-1000 ease-out ${mounted ? 'translate-x-0 opacity-100' : '-translate-x-10 opacity-0'}`}>
-            <div className="flex items-center gap-3 mb-6 text-green-700">
-                <FaGem className="text-2xl animate-pulse" />
-                <span className="text-xs font-bold uppercase tracking-[0.2em]">Join the Elite</span>
+
+            {/* NEW LOGO IMPLEMENTATION */}
+            <div className="flex items-center gap-3 mb-8">
+                <div className="w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center text-green-500 shadow-lg">
+                    <FaCarSide className="text-xl" />
+                </div>
+                <div>
+                    <h1 className="text-xl font-bold text-slate-900 tracking-tight leading-none">
+                        City<span className="text-green-600">Drive</span>
+                    </h1>
+                    <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">Hire</p>
+                </div>
             </div>
+
             <h1 className="text-5xl font-bold text-gray-900 mb-6 leading-tight">
                 Start Your <br/>
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-600 to-green-800">
@@ -124,6 +133,7 @@ export default function SignUpPage() {
 
     return (
         <div className="min-h-screen bg-gray-50 flex overflow-hidden relative">
+            <Toaster position="top-center" />
 
             {/* MOBILE SPLASH */}
             <div className={`lg:hidden absolute inset-0 z-50 w-full h-full bg-gray-50 flex flex-col justify-center items-center px-12 transition-transform duration-1000 ease-in-out ${introFinished ? '-translate-y-full pointer-events-none' : 'translate-y-0'}`}>
@@ -152,7 +162,7 @@ export default function SignUpPage() {
                     <AuthShell title="Create Account" subtitle="Select your account type to get started.">
                         <form onSubmit={onSubmit} className="space-y-4 mt-6">
 
-                            {/* --- 3. Account Type Selector --- */}
+                            {/* Account Type Selector */}
                             <div className="grid grid-cols-2 gap-3 mb-2">
                                 <button
                                     type="button"
@@ -217,7 +227,7 @@ export default function SignUpPage() {
                                 error={errors.confirmPassword}
                             />
 
-                            {/* Show/Hide Toggle (Optional Utility) */}
+                            {/* Show/Hide Toggle */}
                             <div className="flex justify-end">
                                 <button
                                     type="button"

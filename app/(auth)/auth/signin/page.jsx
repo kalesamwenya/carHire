@@ -4,15 +4,15 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
-import { FaArrowLeft, FaGem } from "react-icons/fa";
+import { FaArrowLeft, FaCarSide, FaEnvelope, FaLock } from "react-icons/fa";
 import { toast, Toaster } from 'react-hot-toast';
-import AuthInput from '@/components/auth/AuthInput'; // Use this for fields
-import AuthShell from '@/components/auth/AuthShell'; // Use this for the wrapper
+import AuthInput from '@/components/auth/AuthInput';
+import AuthShell from '@/components/auth/AuthShell';
 
 export default function SignInPage() {
     const router = useRouter();
     const [form, setForm] = useState({ email: "", password: "" });
-    const [show, setShow] = useState(false); // Toggle password visibility
+    const [show, setShow] = useState(false);
     const [busy, setBusy] = useState(false);
     const [errors, setErrors] = useState({});
 
@@ -23,13 +23,8 @@ export default function SignInPage() {
 
     useEffect(() => {
         setMounted(true);
-
-        // 1. Wait 100ms before starting the bar (ensures it starts at 0%)
         const loaderTimer = setTimeout(() => setStartLoader(true), 100);
-
-        // 2. Wait 3s before finishing the intro
         const finishTimer = setTimeout(() => setIntroFinished(true), 3000);
-
         return () => {
             clearTimeout(loaderTimer);
             clearTimeout(finishTimer);
@@ -77,9 +72,18 @@ export default function SignInPage() {
     // --- SHARED BRANDING COMPONENT ---
     const BrandingContent = ({ isMobile }) => (
         <div className={`relative z-10 max-w-md text-left transition-all duration-1000 ease-out ${mounted ? 'translate-x-0 opacity-100' : '-translate-x-10 opacity-0'}`}>
-            <div className="flex items-center gap-3 mb-6 text-green-700">
-                <FaGem className="text-2xl animate-pulse" />
-                <span className="text-xs font-bold uppercase tracking-[0.2em]">Emit Car Hire</span>
+
+            {/* NEW LOGO IMPLEMENTATION */}
+            <div className="flex items-center gap-3 mb-8">
+                <div className="w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center text-green-500 shadow-lg">
+                    <FaCarSide className="text-xl" />
+                </div>
+                <div>
+                    <h1 className="text-xl font-bold text-slate-900 tracking-tight leading-none">
+                        City<span className="text-green-600">Drive</span>
+                    </h1>
+                    <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">Hire</p>
+                </div>
             </div>
 
             <h1 className="text-5xl font-bold text-gray-900 mb-6 leading-tight">
@@ -131,7 +135,7 @@ export default function SignInPage() {
                 <BrandingContent isMobile={false} />
             </div>
 
-            {/* 3. FORM */}
+            {/* 3. FORM AREA */}
             <div className="w-full lg:w-1/2 flex flex-col justify-center items-center p-6 lg:p-12 relative z-0">
 
                 <Link href="/" className="absolute top-8 left-8 flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-green-700 transition-colors group z-20">
@@ -145,20 +149,18 @@ export default function SignInPage() {
                     <AuthShell title="Welcome Back" subtitle="Sign in to manage your bookings.">
                         <form onSubmit={onSubmit} className="space-y-6 mt-8">
 
-                            {/* Email Field */}
-                            <div className="space-y-1.5">
-                                <label className="text-sm font-medium text-gray-900">Email</label>
-                                <input
-                                    type="email"
-                                    value={form.email}
-                                    onChange={(e) => setField("email", e.target.value)}
-                                    className={`w-full px-4 py-3 rounded-lg border ${errors.email ? 'border-red-300 focus:ring-red-200' : 'border-gray-200 focus:border-green-600 focus:ring-green-50'} bg-white text-sm outline-none focus:ring-4 transition-all duration-200 shadow-sm`}
-                                    placeholder="kaleb@example.com"
-                                />
-                                {errors.email && <p className="text-xs text-red-600">{errors.email}</p>}
-                            </div>
+                            {/* Email Input using Component */}
+                            <AuthInput
+                                label="Email"
+                                type="email"
+                                value={form.email}
+                                onChange={(e) => setField("email", e.target.value)}
+                                placeholder="kaleb@example.com"
+                                icon={FaEnvelope}
+                                error={errors.email}
+                            />
 
-                            {/* Password Field */}
+                            {/* Password Input using Component */}
                             <div className="space-y-1.5">
                                 <div className="flex justify-between items-center">
                                     <label className="text-sm font-medium text-gray-900">Password</label>
@@ -167,22 +169,22 @@ export default function SignInPage() {
                                     </Link>
                                 </div>
                                 <div className="relative">
-                                    <input
+                                    <AuthInput
                                         type={show ? "text" : "password"}
                                         value={form.password}
                                         onChange={(e) => setField("password", e.target.value)}
-                                        className={`w-full px-4 py-3 rounded-lg border ${errors.password ? 'border-red-300 focus:ring-red-200' : 'border-gray-200 focus:border-green-600 focus:ring-green-50'} bg-white text-sm outline-none focus:ring-4 transition-all duration-200 shadow-sm pr-12`}
                                         placeholder="••••••••"
+                                        icon={FaLock}
+                                        error={errors.password}
                                     />
                                     <button
                                         type="button"
                                         onClick={() => setShow((s) => !s)}
-                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-gray-400 hover:text-green-700 uppercase tracking-wider"
+                                        className="absolute right-3 top-9 text-xs font-semibold text-gray-400 hover:text-green-700 uppercase tracking-wider z-10"
                                     >
                                         {show ? "Hide" : "Show"}
                                     </button>
                                 </div>
-                                {errors.password && <p className="text-xs text-red-600">{errors.password}</p>}
                             </div>
 
                             <button

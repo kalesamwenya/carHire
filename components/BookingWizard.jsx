@@ -437,16 +437,6 @@ export default function BookingPage() {
         <main className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
             <Toaster position="top-center" />
             <div className="max-w-5xl mx-auto">
-                {/* Page Title */}
-                <div className="mb-10 text-center animate-fade-in">
-                    <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 tracking-tight">
-                        Complete Your Reservation
-                    </h1>
-                    <p className="mt-3 text-lg text-gray-600 max-w-xl mx-auto">
-                        Secure your vehicle in 3 simple steps. No credit card required for reservation.
-                    </p>
-                </div>
-                
                 {/* Suspense Boundary for Search Params */}
                 <Suspense fallback={
                     <div className="h-96 bg-white rounded-2xl shadow-sm border border-gray-100 flex flex-col items-center justify-center">
