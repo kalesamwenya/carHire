@@ -3,6 +3,7 @@ import '../globals.css';
 import Providers from '../../lib/Providers';
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
+import PromoBanner from "@/components/PromoBanner";
 
 export const metadata = {
     title: 'CarHire',
@@ -16,6 +17,7 @@ export default function MainLayout({ children }) {
             <main className="min-h-screen">
                 {children}
             </main>
+            <PromoBanner />
             <Footer />
         </Providers>
     );

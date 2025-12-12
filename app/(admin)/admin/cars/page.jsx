@@ -1,4 +1,7 @@
-import { FaEdit, FaTrash, FaPlus } from 'react-icons/fa';
+'use client';
+
+import Link from 'next/link';
+import { FaEdit, FaTrash, FaPlus, FaEye } from 'react-icons/fa';
 
 // Mock Data
 const cars = [
@@ -10,13 +13,23 @@ const cars = [
 export default function CarsPage() {
     return (
         <div>
+            {/* PAGE HEADER */}
             <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-bold text-gray-800">Fleet Management</h2>
-                <button className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-medium transition-colors">
+                <div>
+                    <h2 className="text-2xl font-bold text-gray-800">Fleet Management</h2>
+                    <p className="text-sm text-gray-500">Manage your vehicle inventory.</p>
+                </div>
+
+                {/* 1. LINK TO ADD NEW CAR */}
+                <Link
+                    href="/admin/cars/new"
+                    className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-medium transition-colors shadow-sm"
+                >
                     <FaPlus /> Add Vehicle
-                </button>
+                </Link>
             </div>
 
+            {/* TABLE */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                 <table className="w-full text-left text-sm text-gray-600">
                     <thead className="bg-gray-50 text-xs uppercase font-semibold text-gray-500">
@@ -31,25 +44,64 @@ export default function CarsPage() {
                     </thead>
                     <tbody className="divide-y divide-gray-100">
                     {cars.map((car) => (
-                        <tr key={car.id} className="hover:bg-gray-50 transition-colors">
-                            <td className="px-6 py-4 font-medium text-gray-900">{car.name}</td>
+                        <tr key={car.id} className="hover:bg-gray-50 transition-colors group">
+
+                            {/* 2. LINK TO VIEW DETAILS (Clicking Name) */}
                             <td className="px-6 py-4">
-                                <span className="bg-gray-100 text-gray-600 px-2 py-1 rounded text-xs">{car.category}</span>
+                                <Link
+                                    href={`/admin/cars/${car.id}`}
+                                    className="font-bold text-gray-900 hover:text-green-600 transition-colors"
+                                >
+                                    {car.name}
+                                </Link>
+                            </td>
+
+                            <td className="px-6 py-4">
+                                <span className="bg-gray-100 text-gray-600 px-2 py-1 rounded text-xs font-medium uppercase tracking-wide">
+                                    {car.category}
+                                </span>
                             </td>
                             <td className="px-6 py-4 font-mono text-xs">{car.plate}</td>
-                            <td className="px-6 py-4 font-bold text-green-600">${car.price}</td>
+                            <td className="px-6 py-4 font-bold text-gray-700">${car.price}</td>
                             <td className="px-6 py-4">
-                  <span className={`px-2 py-1 rounded-full text-xs font-bold ${
-                      car.status === 'Available' ? 'bg-green-100 text-green-700' :
-                          car.status === 'Rented' ? 'bg-blue-100 text-blue-700' :
-                              'bg-red-100 text-red-700'
-                  }`}>
-                    {car.status}
-                  </span>
+                                <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${
+                                    car.status === 'Available' ? 'bg-green-100 text-green-700' :
+                                        car.status === 'Rented' ? 'bg-blue-100 text-blue-700' :
+                                            'bg-red-100 text-red-700'
+                                }`}>
+                                    {car.status}
+                                </span>
                             </td>
-                            <td className="px-6 py-4 text-right flex justify-end gap-3">
-                                <button className="text-blue-600 hover:text-blue-800"><FaEdit /></button>
-                                <button className="text-red-600 hover:text-red-800"><FaTrash /></button>
+
+                            {/* ACTIONS COLUMN */}
+                            <td className="px-6 py-4 text-right">
+                                <div className="flex justify-end gap-2">
+                                    {/* View Button (Icon) */}
+                                    <Link
+                                        href={`/admin/cars/${car.id}`}
+                                        className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                                        title="View Details"
+                                    >
+                                        <FaEye />
+                                    </Link>
+
+                                    {/* 3. LINK TO EDIT PAGE */}
+                                    <Link
+                                        href={`/admin/cars/${car.id}/edit`}
+                                        className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                        title="Edit Vehicle"
+                                    >
+                                        <FaEdit />
+                                    </Link>
+
+                                    {/* Delete Button (Action) */}
+                                    <button
+                                        className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                        title="Delete Vehicle"
+                                    >
+                                        <FaTrash />
+                                    </button>
+                                </div>
                             </td>
                         </tr>
                     ))}

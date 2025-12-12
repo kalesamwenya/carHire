@@ -3,8 +3,22 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
-    FaChartPie, FaCar, FaCalendarAlt, FaUsers, FaSignOutAlt, FaGem,
-    FaCog, FaFileInvoiceDollar, FaTools, FaMapMarkedAlt, FaTimes, FaChartBar, FaChartLine, FaUserShield
+    FaChartPie,
+    FaCar,
+    FaCalendarAlt,
+    FaUsers,
+    FaSignOutAlt,
+    FaGem,
+    FaCog,
+    FaFileInvoiceDollar,
+    FaTools,
+    FaMapMarkedAlt,
+    FaTimes,
+    FaChartBar,
+    FaChartLine,
+    FaUserShield,
+    FaEnvelope,
+    FaLifeRing, FaBell
 } from 'react-icons/fa';
 
 export default function AdminSidebar({ isOpen, setIsOpen }) {
@@ -40,6 +54,14 @@ export default function AdminSidebar({ isOpen, setIsOpen }) {
             items: [
                 { name: 'Analytics', href: '/admin/analytics', icon: FaChartLine }, // New
                 { name: 'Fleet Stats', href: '/admin/statistics', icon: FaChartPie }, // New
+            ]
+        },
+        {
+            title: "Communication",
+            items: [
+                { name: 'Messages', href: '/admin/messages', icon: FaEnvelope },
+                { name: 'Help Desk', href: '/admin/help', icon: FaLifeRing }, // Import FaLifeRing
+                { name: 'Notifications', href: '/admin/notifications', icon: FaBell },
             ]
         },
         {
