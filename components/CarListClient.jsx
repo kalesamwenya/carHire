@@ -1,5 +1,5 @@
 'use client';
-
+export const dynamic = 'force-dynamic';
 import { useState, useMemo } from 'react';
 import { FaFilter, FaSadTear } from 'react-icons/fa';
 import { toast } from 'react-hot-toast';
