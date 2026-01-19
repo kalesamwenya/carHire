@@ -1,12 +1,26 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react'; // Added Suspense
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { FaChevronLeft, FaCheck, FaMinus, FaSpinner } from 'react-icons/fa';
 
+// 1. The Main Page Wrapper (Exported)
 export default function ComparePage() {
+    return (
+        <Suspense fallback={
+            <div className="h-screen flex items-center justify-center">
+                <FaSpinner className="animate-spin text-green-600 text-4xl" />
+            </div>
+        }>
+            <CompareContent />
+        </Suspense>
+    );
+}
+
+// 2. The Actual Content Logic
+function CompareContent() {
     const searchParams = useSearchParams();
     const [cars, setCars] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -25,7 +39,6 @@ export default function ComparePage() {
                 const res = await fetch(`${Public_Api}/cars/get-cars-by-ids.php?ids=${ids}`);
                 const data = await res.json();
                 
-                // Map images just like your other components
                 const mappedData = data.map(car => ({
                     ...car,
                     displayImage: car.image_url 
@@ -42,7 +55,7 @@ export default function ComparePage() {
         };
 
         fetchSelectedCars();
-    }, [ids]);
+    }, [ids, Public_Api]);
 
     if (loading) return (
         <div className="h-screen flex items-center justify-center">
@@ -68,8 +81,6 @@ export default function ComparePage() {
                     <div className="hidden md:block text-sm font-bold text-gray-400">EMIT PHOTOGRAPHY & RENTALS</div>
                 </header>
 
-                
-
                 <div className="overflow-x-auto rounded-3xl border border-gray-100 shadow-sm">
                     <table className="w-full min-w-[800px] text-left">
                         <thead>
@@ -91,7 +102,6 @@ export default function ComparePage() {
                             <ComparisonRow label="Fuel Type" field="fuel" items={cars} />
                             <ComparisonRow label="Seats" field="seats" items={cars} suffix=" People" />
                             <ComparisonRow label="AC System" field="has_ac" items={cars} isCheck />
-                            {/* Action Row */}
                             <tr>
                                 <td className="p-6 font-bold text-gray-400 uppercase text-xs">Finalize</td>
                                 {cars.map(car => (
