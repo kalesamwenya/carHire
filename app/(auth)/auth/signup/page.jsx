@@ -58,37 +58,48 @@ export default function SignUpPage() {
 
     const BASE_API = process.env.NEXT_PUBLIC_API_URL || "https://api.citydrivehire.com";;
 
-    async function onSubmit(e) {
-        e.preventDefault();
-        if (!validate()) return;
-        setBusy(true);
+   async function onSubmit(e) {
+    e.preventDefault();
+    if (!validate()) return;
+    setBusy(true);
+    setMessage("");
+
+    try {
+        const response = await axios.post(`${BASE_API}/users/register.php`, {
+            name: form.name,
+            email: form.email.trim().toLowerCase(),
+            password: form.password,
+            role: form.role,
+            // Consistency: Sending residency for both, but defaulting to 'Corporate' for partners
+            residency: form.role === 'customer' ? form.residency : 'Corporate' 
+        }, {
+            headers: { 'Content-Type': 'application/json' }
+        });
+
+        // 1. Success Feedback
+        toast.success("Welcome! Check your email to verify and login.", {
+            duration: 6000,
+            icon: '✉️',
+        });
+
+        // 2. Clear local form/message
         setMessage("");
 
-        try {
-            const response = await axios.post(`${BASE_API}/users/register.php`, {
-                name: form.name,
-                email: form.email.trim().toLowerCase(),
-                password: form.password,
-                role: form.role,
-                // Only send residency if role is customer, otherwise send 'Corporate' as default for partners
-                residency: form.role === 'customer' ? form.residency : 'Corporate' 
-            }, {
-                headers: { 'Content-Type': 'application/json' }
-            });
+        // 3. Redirect to a 'Check Email' notice or Sign In page
+        // We wait slightly longer (2.5s) so they can read the toast message
+        setTimeout(() => {
+            router.push('/auth/signin?message=please_verify');
+        }, 2500);
 
-            const data = response.data;
-            if (data.token) window.localStorage.setItem('token', data.token);
-            
-            toast.success(`Welcome, ${form.role === 'partner' ? 'Partner' : 'Traveler'}!`);
-            setTimeout(() => router.push('/auth/signin'), 1500);
-
-        } catch (err) {
-            setMessage(err.response?.data?.message || "Something went wrong.");
-        } finally {
-            setBusy(false);
-        }
+    } catch (err) {
+        // Handle the specific error message from your PHP (like "Email already registered")
+        const errorText = err.response?.data?.message || "Something went wrong. Please try again.";
+        setMessage(errorText);
+        toast.error(errorText);
+    } finally {
+        setBusy(false);
     }
-
+}
     const BrandingContent = ({ isMobile }) => (
         <div className={`relative z-10 max-w-md text-left transition-all duration-1000 ease-out ${mounted ? 'translate-x-0 opacity-100' : '-translate-x-10 opacity-0'}`}>
             <div className="flex items-center gap-3 mb-8">

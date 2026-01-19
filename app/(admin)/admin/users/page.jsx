@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { FaUser, FaBriefcase, FaEllipsisV, FaEye, FaSpinner, FaBuilding } from 'react-icons/fa';
+import CityDriveLoader from '@/components/CityDriveLoader';
 
 export default function UsersPage() {
     const [users, setUsers] = useState([]);
@@ -36,12 +37,7 @@ export default function UsersPage() {
 }, []);
 
     if (loading) {
-        return (
-            <div className="flex flex-col items-center justify-center py-20">
-                <FaSpinner className="animate-spin text-green-600 text-3xl mb-4" />
-                <p className="text-gray-500 font-bold text-xs uppercase tracking-widest">Syncing Emit Database...</p>
-            </div>
-        );
+        return <CityDriveLoader message="Loading users"/>;
     }
 
     return (

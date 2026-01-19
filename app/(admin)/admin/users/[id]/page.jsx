@@ -18,11 +18,13 @@ export default function UserDetailsPage() {
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState('upcoming'); // State for the new tab logic
 
+     const BASE_API = process.env.NEXT_PUBLIC_API_URL || "https://api.citydrivehire.com";
+
     useEffect(() => {
         async function fetchData() {
             if (!id) return;
             try {
-                const res = await fetch(`https://api.citydrivehire.com/admin/get_user.php?id=${id}`);
+                const res = await fetch(`${BASE_API}/admin/get_user.php?id=${id}`);
                 const json = await res.json();
                 if (json.success) {
                     setUserData(json.user);
