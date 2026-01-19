@@ -18,19 +18,32 @@ export default function AnalyticsPage() {
       const BASE_API = process.env.NEXT_PUBLIC_API_URL || "https://api.citydrivehire.com";
 
     useEffect(() => {
-        const fetchAnalytics = async () => {
-            setLoading(true);
+        // Inside your AnalyticsPage useEffect:
+const fetchAnalytics = async () => {
+    setLoading(true);
+    try {
+        const res = await axios.get(`${BASE_API}/reports/get_business_analytics.php?year=${year}`);
+        
+        // Robust JSON check
+        let responseData = res.data;
+        if (typeof responseData === 'string') {
             try {
-                const res = await axios.get(`${BASE_API}/reports/get_business_analytics.php?year=${year}`);
-                // Ensure the response is an object and not a string (prevent malformed JSON errors)
-                const sanitizedData = typeof res.data === 'string' ? JSON.parse(res.data) : res.data;
-                setData(sanitizedData);
-            } catch (err) {
-                console.error("Failed to load analytics", err);
-            } finally {
-                setLoading(false);
+                responseData = JSON.parse(responseData);
+            } catch (e) {
+                console.error("Malformed JSON received", responseData);
+                setData({ success: false, message: "Invalid API Response Format" });
+                return;
             }
-        };
+        }
+        
+        setData(responseData);
+    } catch (err) {
+        console.error("Network Error", err);
+        setData({ success: false, message: "Cannot reach server" });
+    } finally {
+        setLoading(false);
+    }
+};
         fetchAnalytics();
     }, [year]);
 
