@@ -3,8 +3,10 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { signOut } from 'next-auth/react'; // ADD THIS IMPORT
 import {
-    FaBars, FaTimes, FaHome, FaHistory, FaUser, FaCog, FaSignOutAlt, FaCar
+    FaBars, FaTimes, FaHome, FaHistory, FaUser, FaCog, FaSignOutAlt, FaCar,
+    FaCarSide
 } from 'react-icons/fa';
 
 export default function DashboardLayoutClient({ user, children }) {
@@ -38,16 +40,20 @@ export default function DashboardLayoutClient({ user, children }) {
             `}>
                 {/* Logo Area */}
                 <div className="h-16 flex items-center px-6 border-b border-gray-100 shrink-0">
-                    <Link href="/" className="flex items-center gap-2 text-xl font-bold text-green-700 tracking-tight">
-                        <FaCar /> CarHire
-                    </Link>
-                    <button
-                        onClick={() => setSidebarOpen(false)}
-                        className="ml-auto lg:hidden p-2 text-gray-500 hover:bg-gray-100 rounded-md transition-colors"
-                        aria-label="Close sidebar"
-                    >
-                        <FaTimes size={20} />
-                    </button>
+                    {/* 1. BRAND LOGO */}
+                <Link href="/" className="flex items-center gap-3 group">
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-105 transition-all bg-slate-900 text-green-500`}>
+                        <FaCarSide className="text-xl" />
+                    </div>
+                    <div>
+                        <h1 className="text-xl font-bold tracking-tight leading-none text-slate-900">
+                            City<span className="text-green-600">Drive</span>
+                        </h1>
+                        <p className="text-[10px] uppercase tracking-widest font-bold text-slate-500">
+                            Hire
+                        </p>
+                    </div>
+                </Link>
                 </div>
 
                 {/* Navigation Links (Scrollable) */}
@@ -72,7 +78,7 @@ export default function DashboardLayoutClient({ user, children }) {
                     })}
                 </nav>
 
-                {/* User Footer (Sticky at bottom of sidebar) */}
+                {/* User Footer - UPDATED SIGN OUT */}
                 <div className="p-4 border-t border-gray-100 bg-gray-50/50 shrink-0">
                     <div className="flex items-center gap-3 mb-4">
                         <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-700 font-bold shrink-0">
@@ -83,7 +89,12 @@ export default function DashboardLayoutClient({ user, children }) {
                             <p className="text-xs text-gray-500 truncate">{user.email}</p>
                         </div>
                     </div>
-                    <button className="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-red-600 bg-white border border-red-100 hover:bg-red-50 rounded-lg transition-colors shadow-sm">
+                    
+                    {/* ADD THE onClick HERE */}
+                    <button 
+                        onClick={() => signOut({ callbackUrl: '/auth/signin' })}
+                        className="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-red-600 bg-white border border-red-100 hover:bg-red-50 rounded-lg transition-colors shadow-sm"
+                    >
                         <FaSignOutAlt /> Sign Out
                     </button>
                 </div>

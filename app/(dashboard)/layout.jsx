@@ -1,30 +1,36 @@
-import { redirect } from 'next/navigation';
-import DashboardLayoutClient from '../../components/dashboard/DashboardLayoutClient';
-import '../globals.css'
-// Force dynamic rendering
-export const dynamic = 'force-dynamic';
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { redirect } from "next/navigation";
+import DashboardLayoutClient from "@/components/dashboard/DashboardLayoutClient";
 
-async function getUser() {
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
-    try {
-        const res = await fetch(`${baseUrl}/api/users?me=true`, { cache: 'no-store' });
-        if (!res.ok) return null;
-        return await res.json();
-    } catch (e) {
-        return null;
-    }
-}
+export default async function CustomerLayout({ children }) {
+  const session = await getServerSession(authOptions);
 
-export default async function DashboardLayout({ children }) {
-    const user = await getUser();
+  // 1. Not logged in
+  if (!session) {
+    redirect("/auth/signin");
+  }
 
-    if (!user) {
-        redirect('/signin');
-    }
+  // 2. Normalize role
+  const role = session.user?.role?.toLowerCase();
 
-    return (
-        <DashboardLayoutClient user={user}>
-            {children}
-        </DashboardLayoutClient>
-    );
+  // 3. Missing role = force re-login
+  if (!role) {
+    redirect("/auth/signin");
+  }
+
+  // 4. Role protection
+  if (role !== "user") {
+    if (role === "partner") redirect("/partner");
+    if (role === "admin") redirect("/admin");
+
+    // fallback safety
+    redirect("/auth/signin");
+  }
+
+  return (
+    <DashboardLayoutClient user={session.user}>
+      {children}
+    </DashboardLayoutClient>
+  );
 }

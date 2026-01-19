@@ -1,33 +1,28 @@
-'use client';
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { redirect } from "next/navigation";
+// You can create a specific AdminLayoutClient similar to your others
+import AdminLayoutClient from "@/components/admin/AdminLayoutClient"; 
 
-import { useState } from 'react';
-import AdminSidebar from '@/components/admin/AdminSidebar';
-import AdminHeader from '@/components/admin/AdminHeader';
+export default async function AdminLayout({ children }) {
+    const session = await getServerSession(authOptions);
 
-export default function AdminLayout({ children }) {
-    const [sidebarOpen, setSidebarOpen] = useState(false);
+    // 1. Check if session exists
+    if (!session) {
+        redirect('/auth/signin');
+    }
+
+    // 2. Strict Admin Check
+    // Note: Use 'admin' or 'super_admin' depending on your PHP database values
+    if (session.user.role !== 'admin' && session.user.role !== 'super_admin') {
+        // If they are a partner, send them to /partner, otherwise /dashboard
+        const redirectPath = session.user.role === 'partner' ? '/partner' : '/dashboard';
+        redirect(redirectPath);
+    }
 
     return (
-        <div className="min-h-screen bg-gray-50 flex">
-            {/* Sidebar Component */}
-            <AdminSidebar
-                isOpen={sidebarOpen}
-                setIsOpen={setSidebarOpen}
-            />
-
-            {/* Main Content Area */}
-            <div className="flex-1 flex flex-col min-w-0 transition-all duration-300">
-
-                {/* Header Component */}
-                <AdminHeader onMenuClick={() => setSidebarOpen(true)} />
-
-                {/* Page Content Scrollable Area */}
-                <main className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8">
-                    <div className="max-w-7xl mx-auto">
-                        {children}
-                    </div>
-                </main>
-            </div>
-        </div>
+        <AdminLayoutClient user={session.user}>
+            {children}
+        </AdminLayoutClient>
     );
 }

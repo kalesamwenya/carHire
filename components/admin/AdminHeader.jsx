@@ -2,14 +2,14 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
-import { FaBars, FaSearch } from 'react-icons/fa';
+import { FaBars, FaSearch, FaShieldAlt } from 'react-icons/fa';
 
 // Import the new independent components
 import MessagesDropdown from '@/components/admin/header/MessagesDropdown';
 import NotificationsDropdown from '@/components/admin/header/NotificationsDropdown';
 import ProfileDropdown from '@/components/admin/header/ProfileDropdown';
 
-export default function AdminHeader({ onMenuClick }) {
+export default function AdminHeader({ user, onMenuClick }) {
     const pathname = usePathname();
     const [activeDropdown, setActiveDropdown] = useState(null);
     const actionContainerRef = useRef(null);
@@ -39,16 +39,28 @@ export default function AdminHeader({ onMenuClick }) {
     };
 
     return (
-        <header className="bg-white border-b border-gray-200 h-16 flex items-center justify-between px-4 lg:px-8 shadow-sm sticky top-0 z-30">
+        <>
+            {/* Mobile Header */}
+            <header className="lg:hidden flex items-center justify-between p-4 bg-white border-b border-slate-200 shrink-0">
+                <div className="flex items-center gap-2">
+                     <div className="w-8 h-8 bg-slate-900 rounded flex items-center justify-center">
+                        <FaShieldAlt className="text-amber-500 text-sm" />
+                     </div>
+                     <span className="font-bold text-slate-900">Admin Panel</span>
+                </div>
+                <button
+                    onClick={onMenuClick}
+                    className="p-2 text-slate-600 hover:bg-slate-100 rounded-lg"
+                >
+                    <FaBars size={24} />
+                </button>
+            </header>
+
+            {/* Desktop Header */}
+            <header className="hidden lg:flex bg-white border-b border-gray-200 h-16 items-center justify-between px-4 lg:px-8 shadow-sm sticky top-0 z-30">
 
             {/* --- LEFT SIDE --- */}
             <div className="flex items-center gap-4 flex-1">
-                <button
-                    onClick={onMenuClick}
-                    className="lg:hidden p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-                >
-                    <FaBars className="text-xl" />
-                </button>
 
                 <h2 className="hidden md:block text-xl font-bold text-gray-800 tracking-tight min-w-[120px]">
                     {getPageTitle()}
@@ -84,5 +96,6 @@ export default function AdminHeader({ onMenuClick }) {
 
             </div>
         </header>
+        </>
     );
 }

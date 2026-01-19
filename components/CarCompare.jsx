@@ -51,7 +51,7 @@ export default function CarCompare({ cars = [], onClose, onRemove }) {
                                             
                                             <div className="relative h-32 w-full rounded-lg overflow-hidden mb-3 bg-gray-100">
                                                 {c.image ? (
-                                                    <Image src={c.image} alt={c.name} fill className="object-cover" />
+                                                    <Image src={`${c.image}`} alt={c.name} fill className="object-cover" />
                                                 ) : (
                                                     <div className="w-full h-full flex items-center justify-center text-gray-400"><FaCarSide size={30} /></div>
                                                 )}
@@ -93,7 +93,7 @@ export default function CarCompare({ cars = [], onClose, onRemove }) {
                             <tr>
                                 <td className="sticky left-0 bg-white p-4"></td>
                                 {cars.map(c => (
-                                    <td key={c.id} className="p-4">
+                                    <td key={c.id} className="p-4 inline-flex gap-4 items-center w-full">
                                         <Link 
                                             href={`/booking?carId=${c.id}`}
                                             className={`block w-full text-center py-2.5 rounded-lg font-bold transition-all ${
@@ -104,6 +104,12 @@ export default function CarCompare({ cars = [], onClose, onRemove }) {
                                         >
                                             {c.available ? 'Book Now' : 'Out of Stock'}
                                         </Link>
+                                        {/* <Link 
+    href={`/compare?ids=${cars.map(c => c.id).join(',')}`}
+    className="bg-green-600 text-white px-6 py-2.5 rounded-xl font-bold hover:bg-green-700 transition-colors"
+>
+    Compare
+</Link> */}
                                     </td>
                                 ))}
                             </tr>

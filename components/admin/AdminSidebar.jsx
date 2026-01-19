@@ -2,13 +2,13 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { signOut } from 'next-auth/react';
 import {
     FaChartPie,
     FaCar,
     FaCalendarAlt,
     FaUsers,
     FaSignOutAlt,
-    FaGem,
     FaCog,
     FaFileInvoiceDollar,
     FaTools,
@@ -29,7 +29,7 @@ export default function AdminSidebar({ isOpen, setIsOpen }) {
         {
             title: "Overview",
             items: [
-                { name: 'Dashboard', href: '/admin/dashboard', icon: FaChartPie },
+                { name: 'Dashboard', href: '/admin', icon: FaChartPie },
                 { name: 'Live Map', href: '/admin/map', icon: FaMapMarkedAlt },
             ]
         },
@@ -90,7 +90,7 @@ export default function AdminSidebar({ isOpen, setIsOpen }) {
 
                 {/* BRAND LOGO */}
                 <div className="h-16 flex items-center justify-between px-6 border-b border-slate-800 bg-slate-950/50">
-                    <Link href="/admin/dashboard" className="flex items-center gap-2">
+                    <Link href="/admin" className="flex items-center gap-2">
                         <span className="font-bold text-lg tracking-wide">City<span className="text-green-500">DriveHire</span></span>
                     </Link>
                     {/* Close Button (Mobile Only) */}
@@ -132,7 +132,10 @@ export default function AdminSidebar({ isOpen, setIsOpen }) {
 
                 {/* FOOTER / LOGOUT */}
                 <div className="p-4 border-t border-slate-800 bg-slate-950/30">
-                    <button className="flex items-center w-full px-4 py-2 text-sm text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors">
+                    <button 
+                        onClick={() => signOut({ callbackUrl: '/auth/signin' })}
+                        className="flex items-center w-full px-4 py-2 text-sm text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+                    >
                         <FaSignOutAlt className="mr-3" />
                         Sign Out
                     </button>

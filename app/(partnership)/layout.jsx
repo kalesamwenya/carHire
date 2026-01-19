@@ -1,30 +1,23 @@
-import { redirect } from 'next/navigation';
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { redirect } from "next/navigation";
 import PartnerLayoutClient from '../../components/partner/PartnerLayoutClient';
 
 export const dynamic = 'force-dynamic';
 
-async function getUser() {
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
-    try {
-        const res = await fetch(`${baseUrl}/api/users?me=true`, { cache: 'no-store' });
-        if (!res.ok) return null;
-        return await res.json();
-    } catch (e) {
-        return null;
-    }
-}
-
 export default async function PartnerLayout({ children }) {
-    const user = await getUser();
+    // 1. Get the session from NextAuth
+    const session = await getServerSession(authOptions);
 
-    if (!user) {
-        redirect('/signin');
+    // 2. If no session, or role is not partner, redirect
+    if (!session || session.user.role !== 'partner') {
+        // We redirect to sign-in with an error message
+        redirect('/auth/signin?error=AccessDenied');
     }
 
-    // In a real app, verify user.role === 'partner' here
-
+    // 3. Pass the session user to the Client Layout
     return (
-        <PartnerLayoutClient user={user}>
+        <PartnerLayoutClient user={session.user}>
             {children}
         </PartnerLayoutClient>
     );

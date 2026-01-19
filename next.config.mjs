@@ -2,14 +2,17 @@
 const nextConfig = {
     reactStrictMode: true,
 
-    eslint: {
-        ignoreDuringBuilds: true,
-    },
 
     images: {
         unoptimized: true,
 
         remotePatterns: [
+            {
+        protocol: 'https',
+        hostname: 'api.citydrivehire.com',
+        port: '',
+        pathname: '/**', // Allows all image paths from this host
+      },
             {
                 protocol: "https",
                 hostname: "images.pexels.com",
@@ -27,6 +30,7 @@ const nextConfig = {
                 hostname: "res.cloudinary.com",
                 pathname: "/dxfefqgqf/image/upload/**",
             },
+            
         ],
     },
 };

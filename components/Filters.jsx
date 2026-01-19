@@ -1,148 +1,93 @@
-// components/Filters.jsx
 'use client';
 
-import { useState, useEffect } from 'react';
-import { FaFilter, FaTimes, FaMoneyBillWave, FaCar, FaCogs, FaGasPump } from 'react-icons/fa';
+import { FaCar, FaCogs, FaGasPump, FaMoneyBillWave, FaCheckCircle } from 'react-icons/fa';
 
-export default function Filters({ onChange, activeFilters = {} }) {
-    // Local state to manage UI, but we sync with parent via useEffect/props if needed
-    // In this simple version, we rely on parent passing 'activeFilters' to keep sync or just local
+export default function Filters({ onChange, activeFilters }) {
     
-    const handleChange = (key, value) => {
-        const next = { ...activeFilters, [key]: value };
-        // Clean up empty keys
-        if (value === '' || value === false) {
-            delete next[key];
-        }
-        onChange(next);
+    const handleFilterChange = (key, value) => {
+        onChange({ ...activeFilters, [key]: value === "" ? null : value });
     };
 
-    const handleReset = () => {
-        onChange({});
-    };
-
-    // Helper to check if any filter is active
-    const hasActiveFilters = Object.keys(activeFilters).length > 0;
+    const inputStyle = "w-full bg-gray-100 border-none rounded-xl p-3 text-sm font-semibold focus:ring-2 focus:ring-green-500 transition-all outline-none text-gray-700";
+    const labelStyle = "text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 flex items-center gap-2";
 
     return (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
-            
-            {/* Header */}
-            <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-100">
-                <h3 className="font-bold text-gray-900 flex items-center gap-2">
-                    <FaFilter className="text-green-600" /> Filters
-                </h3>
-                {hasActiveFilters && (
-                    <button 
-                        onClick={handleReset}
-                        className="text-xs text-red-500 hover:text-red-700 font-medium flex items-center gap-1 transition-colors"
-                    >
-                        <FaTimes /> Clear
-                    </button>
-                )}
+        <div className="bg-white rounded-2xl p-6 shadow-sm space-y-8">
+            <div>
+                <h3 className="text-lg font-bold text-gray-900 mb-1">Refine Search</h3>
+                <p className="text-xs text-gray-400 mb-6">Find the perfect ride for Emit Photography</p>
             </div>
 
-            <div className="space-y-6">
-                
-                {/* 1. Price Range (Slider) */}
-                <div>
-                    <label className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
-                        <FaMoneyBillWave className="text-gray-400" /> Max Price (Daily)
-                    </label>
+            {/* Vehicle Type */}
+            <div className="space-y-2">
+                <label className={labelStyle}><FaCar /> Vehicle Type</label>
+                <select 
+                    className={inputStyle}
+                    value={activeFilters.type || ""}
+                    onChange={(e) => handleFilterChange('type', e.target.value)}
+                >
+                    <option value="">All Types</option>
+                    <option value="Sedan">Sedan</option>
+                    <option value="SUV">SUV</option>
+                    <option value="Luxury">Luxury</option>
+                    <option value="Pickup">Pickup</option>
+                </select>
+            </div>
+
+            {/* Transmission */}
+            <div className="space-y-2">
+                <label className={labelStyle}><FaCogs /> Transmission</label>
+                <select 
+                    className={inputStyle}
+                    value={activeFilters.transmission || ""}
+                    onChange={(e) => handleFilterChange('transmission', e.target.value)}
+                >
+                    <option value="">Any</option>
+                    <option value="Automatic">Automatic</option>
+                    <option value="Manual">Manual</option>
+                </select>
+            </div>
+
+            {/* Price Range */}
+            <div className="space-y-2">
+                <label className={labelStyle}><FaMoneyBillWave /> Max Price (ZMW)</label>
+                <input 
+                    type="range" 
+                    min="500" 
+                    max="10000" 
+                    step="100"
+                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-green-600"
+                    value={activeFilters.maxPrice || 10000}
+                    onChange={(e) => handleFilterChange('maxPrice', e.target.value)}
+                />
+                <div className="flex justify-between text-[11px] font-bold text-gray-500 mt-1">
+                    <span>500</span>
+                    <span className="text-green-600">Up to {activeFilters.maxPrice || 10000}</span>
+                </div>
+            </div>
+
+            {/* Availability Toggle */}
+            <label className="flex items-center gap-3 cursor-pointer group">
+                <div className="relative">
                     <input 
-                        type="range" 
-                        min="0" 
-                        max="5000" 
-                        step="100"
-                        value={activeFilters.maxPrice || 5000}
-                        onChange={(e) => handleChange('maxPrice', e.target.value)}
-                        className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-green-600"
+                        type="checkbox" 
+                        className="sr-only" 
+                        checked={!!activeFilters.availableOnly}
+                        onChange={(e) => handleFilterChange('availableOnly', e.target.checked)}
                     />
-                    <div className="flex justify-between text-xs text-gray-500 mt-2">
-                        <span>ZMW 0</span>
-                        <span className="font-bold text-green-700">
-                            {activeFilters.maxPrice ? `ZMW ${activeFilters.maxPrice}` : 'Any Price'}
-                        </span>
-                    </div>
+                    <div className={`w-10 h-5 rounded-full transition-colors ${activeFilters.availableOnly ? 'bg-green-500' : 'bg-gray-200'}`}></div>
+                    <div className={`absolute top-1 left-1 bg-white w-3 h-3 rounded-full transition-transform ${activeFilters.availableOnly ? 'translate-x-5' : 'translate-x-0'}`}></div>
                 </div>
+                <span className="text-sm font-bold text-gray-700 group-hover:text-gray-900 transition-colors">Available Only</span>
+            </label>
 
-                {/* 2. Car Type (Chips) */}
-                <div>
-                    <label className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
-                        <FaCar className="text-gray-400" /> Vehicle Type
-                    </label>
-                    <div className="flex flex-wrap gap-2">
-                        {['Sedan', 'SUV', 'Van', 'Truck'].map((type) => {
-                            const isActive = activeFilters.type === type;
-                            return (
-                                <button
-                                    key={type}
-                                    onClick={() => handleChange('type', isActive ? '' : type)}
-                                    className={`px-3 py-1.5 text-xs font-medium rounded-full border transition-all ${
-                                        isActive 
-                                        ? 'bg-green-100 border-green-600 text-green-800' 
-                                        : 'bg-white border-gray-200 text-gray-600 hover:border-green-400'
-                                    }`}
-                                >
-                                    {type}
-                                </button>
-                            );
-                        })}
-                    </div>
-                </div>
-
-                {/* 3. Transmission (Select) */}
-                <div>
-                    <label className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
-                        <FaCogs className="text-gray-400" /> Transmission
-                    </label>
-                    <select 
-                        value={activeFilters.transmission || ''}
-                        onChange={(e) => handleChange('transmission', e.target.value)}
-                        className="w-full p-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none bg-gray-50"
-                    >
-                        <option value="">Any Transmission</option>
-                        <option value="Automatic">Automatic</option>
-                        <option value="Manual">Manual</option>
-                    </select>
-                </div>
-
-                {/* 4. Fuel Type (Select) */}
-                <div>
-                    <label className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
-                        <FaGasPump className="text-gray-400" /> Fuel Type
-                    </label>
-                    <select 
-                        value={activeFilters.fuel || ''}
-                        onChange={(e) => handleChange('fuel', e.target.value)}
-                        className="w-full p-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none bg-gray-50"
-                    >
-                        <option value="">Any Fuel</option>
-                        <option value="Petrol">Petrol</option>
-                        <option value="Diesel">Diesel</option>
-                        <option value="Hybrid">Hybrid</option>
-                        <option value="Electric">Electric</option>
-                    </select>
-                </div>
-
-                {/* 5. Availability (Toggle Switch) */}
-                <div className="pt-2 border-t border-gray-100">
-                    <label className="flex items-center justify-between cursor-pointer group">
-                        <span className="text-sm font-medium text-gray-700 group-hover:text-green-700 transition-colors">
-                            Show Available Only
-                        </span>
-                        <div className="relative inline-flex items-center cursor-pointer">
-                            <input 
-                                type="checkbox" 
-                                className="sr-only peer"
-                                checked={!!activeFilters.availableOnly}
-                                onChange={(e) => handleChange('availableOnly', e.target.checked)}
-                            />
-                            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
-                        </div>
-                    </label>
-                </div>
-            </div>
+            {/* Clear Button */}
+            <button 
+                onClick={() => onChange({})}
+                className="w-full py-3 text-xs font-bold text-gray-400 hover:text-red-500 border border-dashed border-gray-200 rounded-xl transition-all"
+            >
+                Clear All Filters
+            </button>
         </div>
     );
 }

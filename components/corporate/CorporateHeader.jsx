@@ -12,7 +12,7 @@ export default function CorporateHeader() {
     const [scrolled, setScrolled] = useState(false);
 
     // 1. Define the pages where you want transparency
-    const transparentRoutes = ['/about', '/feedback', '/contact', '/faq'];
+    const transparentRoutes = ['/about', '/feedback', '/contact', '/faq', '/terms', '/privacy'];
 
     // 2. Check if the current pathname exists in that array
     const isTransparentRoute = transparentRoutes.includes(pathname);

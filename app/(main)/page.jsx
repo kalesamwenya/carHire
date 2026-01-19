@@ -1,18 +1,17 @@
 import Link from 'next/link';
-import { FaArrowRight } from 'react-icons/fa';
 import HeroSection from '../../components/HeroSection';
 import Features from '../../components/Features';
 import Testimonials from '../../components/Testimonials';
-import CarCard from '../../components/CarCard';
+import PopularRentals from '@/components/PopularRentals';
 
 // Force dynamic rendering to skip build-time fetching
 export const dynamic = 'force-dynamic';
 
 async function getFeaturedCars() {
     try {
-        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+        const baseUrl = 'https://api.citydrivehire.com';
         // In production, ensure your BASE_URL is set correctly in Vercel env vars
-        const res = await fetch(`${baseUrl}/api/cars?limit=3&featured=true`, { 
+        const res = await fetch(`${baseUrl}/cars?limit=3&featured=true`, { 
             cache: 'no-store' 
         });
         
@@ -45,34 +44,7 @@ export default async function HomePage() {
                 </div>
             </div>
 
-            <section className="py-20 max-w-7xl mx-auto px-6 lg:px-8">
-                <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-4">
-                    <div>
-                        <h2 className="text-3xl font-bold text-gray-900">Popular Rentals</h2>
-                        <p className="mt-2 text-gray-600 max-w-lg">
-                            Our most booked vehicles this month. Reliable, fuel-efficient, and ready for the road.
-                        </p>
-                    </div>
-                    <Link 
-                        href="/cars" 
-                        className="group flex items-center gap-2 text-green-700 font-semibold hover:text-green-800 transition-colors"
-                    >
-                        View Full Fleet <FaArrowRight className="group-hover:translate-x-1 transition-transform" />
-                    </Link>
-                </div>
-
-                {featuredCars.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                        {featuredCars.map((car) => (
-                            <CarCard key={car.id} car={car} />
-                        ))}
-                    </div>
-                ) : (
-                    <div className="text-center py-20 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
-                        <p className="text-gray-500">Our fleet is currently being updated. Check back soon!</p>
-                    </div>
-                )}
-            </section>
+            <PopularRentals/>
 
             <Features 
                 title="Experience the Difference"
