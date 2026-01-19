@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import CarListClient from '../../../components/CarListClient';
 
 export default async function CarsPage() {
