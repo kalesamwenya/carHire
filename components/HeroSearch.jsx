@@ -5,7 +5,7 @@ import { FaSearch, FaMapMarkerAlt, FaCalendarAlt, FaCheckCircle, FaStar } from '
 import SearchModal from './SearchModal';
 
 // Ensure this matches your local WAMP server URL
-const API_BASE = "http://api.citydrivehire.local";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "https://api.citydrivehire.com";
 
 export default function HeroSection() {
     const [isModalOpen, setIsModalOpen] = useState(false);

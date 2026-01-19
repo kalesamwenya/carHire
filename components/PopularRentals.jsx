@@ -4,7 +4,7 @@ import PopularRentalsClient from './PopularRentalsClient';
 
 async function getFeaturedCars() {
     // Note: Update this to your production domain when you go live
-    const Public_Api = "http://api.citydrivehire.local"; 
+    const Public_Api = process.env.NEXT_PUBLIC_API_URL || "https://api.citydrivehire.com"; 
     
     try {
         const res = await fetch(`${Public_Api}/cars/get-cars.php`, { cache: 'no-store' });
