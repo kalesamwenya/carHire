@@ -56,6 +56,8 @@ export default function SignUpPage() {
         return Object.keys(e).length === 0;
     }
 
+    const BASE_API = process.env.NEXT_PUBLIC_API_URL || "https://api.citydrivehire.com";;
+
     async function onSubmit(e) {
         e.preventDefault();
         if (!validate()) return;
@@ -63,7 +65,7 @@ export default function SignUpPage() {
         setMessage("");
 
         try {
-            const response = await axios.post('https://api.citydrivehire.com/users/register.php', {
+            const response = await axios.post(`${BASE_API}/users/register.php`, {
                 name: form.name,
                 email: form.email.trim().toLowerCase(),
                 password: form.password,

@@ -168,8 +168,9 @@ export async function generateBookingReceipt({ tx_ref, amount, customer, car, da
 
     // --- 9. UPLOAD & SAVE ---
     const pdfBase64 = doc.output('datauristring').split(',')[1];
+    const BASE_API = process.env.NEXT_PUBLIC_API_URL || "https://api.citydrivehire.com";
     try {
-        await axios.post('https://api.citydrivehire.com/bookings/upload_receipt.php', {
+        await axios.post(`${BASE_API}/bookings/upload_receipt.php`, {
             booking_id,
             pdf_base64,
             email: customer.email,

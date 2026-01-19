@@ -27,10 +27,12 @@ function VerifyContent() {
             return;
         }
 
+        const BASE_API = process.env.NEXT_PUBLIC_API_URL || "https://api.citydrivehire.com";
+
         const verifyAccount = async () => {
             try {
                 // Calling your PHP backend
-                const response = await axios.get(`https://api.citydrivehire.com/users/verify.php`, {
+                const response = await axios.get(`${BASE_API}/users/verify.php`, {
                     params: { token, email }
                 });
 

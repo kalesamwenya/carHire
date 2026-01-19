@@ -12,6 +12,8 @@ export default function ForgotPasswordPage() {
     const [busy, setBusy] = useState(false);
     const [mounted, setMounted] = useState(false);
 
+    const BASE_API = process.env.NEXT_PUBLIC_API_URL || "https://api.citydrivehire.com";;
+
     useEffect(() => { setMounted(true); }, []);
 
     async function onSubmit(e) {
@@ -20,7 +22,7 @@ export default function ForgotPasswordPage() {
         
         setBusy(true);
         try {
-            await axios.post('https://api.citydrivehire.com/users/request-reset.php', { email });
+            await axios.post(`${BASE_API}/users/request-reset.php`, { email });
             toast.success("Reset link sent! Please check your inbox.");
         } catch (err) {
             toast.error(err.response?.data?.message || "Something went wrong.");
