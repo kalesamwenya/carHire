@@ -10,25 +10,47 @@ export default function MessagesPage() {
     const [searchTerm, setSearchTerm] = useState('');
 
 
-    const API_URL =  rocess.env.NEXT_PUBLIC_API_URL || "https://api.citydrivehire.com";
+    const API_URL =  process.env.NEXT_PUBLIC_API_URL || "https://api.citydrivehire.com";
 
 
 
     // 1. FETCH REAL DATA FROM PHP
-    const fetchMessages = async () => {
-        try {
-            const res = await fetch(API_URL);
-            const result = await res.json();
-            if (result.success) {
-                setInquiries(result.data);
-                if (result.data.length > 0) setSelectedInquiry(result.data[0]);
-            }
-        } catch (error) {
-            console.error("Error fetching messages:", error);
-        } finally {
-            setLoading(false);
+    // 1. FETCH REAL DATA FROM PHP
+const fetchMessages = async () => {
+    try {
+        // Point this to your actual PHP script
+        const res = await fetch(`${API_URL}/support/contact_messages.php`); 
+        const result = await res.json();
+        
+        if (result.success && Array.isArray(result.data)) {
+            setInquiries(result.data);
+            if (result.data.length > 0) setSelectedInquiry(result.data[0]);
         }
-    };
+    } catch (error) {
+        console.error("Error fetching messages:", error);
+    } finally {
+        setLoading(false);
+    }
+};
+
+// 3. DELETE MESSAGE (Fixed the URL)
+const handleDelete = async (id) => {
+    if (!confirm("Are you sure you want to delete this message?")) return;
+
+    try {
+        // Added the PHP path to the delete request
+        const res = await fetch(`${API_URL}/support/contact_messages.php?id=${id}`, { 
+            method: 'DELETE' 
+        });
+        const result = await res.json();
+        if (result.success) {
+            setInquiries(prev => prev.filter(i => i.id !== id));
+            setSelectedInquiry(null);
+        }
+    } catch (error) {
+        console.error("Delete failed:", error);
+    }
+};
 
     useEffect(() => {
         fetchMessages();
@@ -52,22 +74,6 @@ export default function MessagesPage() {
             } catch (error) {
                 console.error("Status update failed:", error);
             }
-        }
-    };
-
-    // 3. DELETE MESSAGE (DELETE)
-    const handleDelete = async (id) => {
-        if (!confirm("Are you sure you want to delete this message?")) return;
-
-        try {
-            const res = await fetch(`${API_URL}?id=${id}`, { method: 'DELETE' });
-            const result = await res.json();
-            if (result.success) {
-                setInquiries(prev => prev.filter(i => i.id !== id));
-                setSelectedInquiry(null);
-            }
-        } catch (error) {
-            console.error("Delete failed:", error);
         }
     };
 
