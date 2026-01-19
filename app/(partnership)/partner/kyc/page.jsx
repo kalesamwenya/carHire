@@ -9,7 +9,7 @@ export default function KYCUpload() {
     const [loading, setLoading] = useState(false);
     const [status, setStatus] = useState(null);
 
-     const Public_Api = "https://api.citydrivehire.com";
+     const Public_Api = process.env.NEXT_PUBLIC_API_URL || "https://api.citydrivehire.com";
 
     const handleUpload = async (e) => {
         e.preventDefault();

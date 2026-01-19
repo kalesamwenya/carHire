@@ -55,10 +55,12 @@ function ReserveContent() {
         };
     }, [availableAfter, form.endDate, car]);
 
+    const BASE_API = process.env.NEXT_PUBLIC_API_URL || "https://api.citydrivehire.com";
+
     useEffect(() => {
         const fetchCar = async () => {
             try {
-                const res = await fetch(`https://api.citydrivehire.com/cars/get-cars.php`);
+                const res = await fetch(`${BASE_API}/cars/get-cars.php`);
                 const allCars = await res.json();
                 const list = allCars.cars || allCars.data || allCars;
                 const selectedCar = list.find(c => String(c.id) === String(carId));
@@ -93,7 +95,7 @@ function ReserveContent() {
             formData.append("reference_code", `REF-${tempBookingId}`);
             formData.append("payment_method", "Reservation");
 
-            const res = await axios.post("https://api.citydrivehire.com/bookings/save-booking.php", formData);
+            const res = await axios.post(`${BASE_API}/bookings/save-booking.php`, formData);
             
             if (res.data.success) {
                 setStep(2);

@@ -9,10 +9,12 @@ export default function AnalyticsPage() {
     const [loading, setLoading] = useState(true);
     const partnerId = 1; // Replace with dynamic auth id
 
+    const BASE_API = process.env.NEXT_PUBLIC_API_URL || "https://api.citydrivehire.com";
+
     useEffect(() => {
         const fetchAnalytics = async () => {
             try {
-                const res = await axios.get(`https://api.citydrivehire.com/partners/get-analytics.php?user_id=${partnerId}`);
+                const res = await axios.get(`${BASE_API}/partners/get-analytics.php?user_id=${partnerId}`);
                 if (res.data.success) {
                     setData({
                         revenue: res.data.revenue,

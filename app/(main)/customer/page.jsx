@@ -9,7 +9,7 @@ export default function CustomerBookingsPage() {
     const [bookings, setBookings] = useState([]);
     const [loading, setLoading] = useState(true);
 
-    const Public_Api = "https://api.citydrivehire.com";
+    const Public_Api = process.env.NEXT_PUBLIC_API_URL || "https://api.citydrivehire.com";
 
     useEffect(() => {
         const fetchBookings = async () => {

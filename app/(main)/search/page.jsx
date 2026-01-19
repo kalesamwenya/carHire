@@ -18,7 +18,7 @@ function SearchContent() {
   const dropoff = searchParams.get('dropoff');
 
   // --- CONFIGURATION ---
-  const API_BASE = "https://api.citydrivehire.com";
+  const API_BASE = process.env.NEXT_PUBLIC_API_URL || "https://api.citydrivehire.com";
 
   useEffect(() => {
     const fetchAvailability = async () => {

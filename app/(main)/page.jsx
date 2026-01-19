@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic';
 
 async function getFeaturedCars() {
     try {
-        const baseUrl = 'https://api.citydrivehire.com';
+        const baseUrl = process.env.NEXT_PUBLIC_API_URL || "https://api.citydrivehire.com";
         // In production, ensure your BASE_URL is set correctly in Vercel env vars
         const res = await fetch(`${baseUrl}/cars?limit=3&featured=true`, { 
             cache: 'no-store' 

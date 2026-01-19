@@ -19,7 +19,7 @@ export default function AddCarPage() {
     const [previews, setPreviews] = useState([]);
     const fileInputRef = useRef(null);
 
-    const Public_Api = "https://api.citydrivehire.com";
+    const Public_Api = process.env.NEXT_PUBLIC_API_URL || "https://api.citydrivehire.com";
 
     // REAL-TIME STATUS CHECK (From our previous step)
     useEffect(() => {

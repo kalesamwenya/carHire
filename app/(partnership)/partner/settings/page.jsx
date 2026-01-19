@@ -25,7 +25,7 @@ export default function PartnerSettings() {
         kyc_status: null // Track status for the badge
     });
 
-    const Public_Api = "https://api.citydrivehire.com";
+    const Public_Api = process.env.NEXT_PUBLIC_API_URL || "https://api.citydrivehire.com";
 
     useEffect(() => {
         if (session?.user?.id) {

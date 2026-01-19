@@ -16,7 +16,7 @@ import {
 } from "react-icons/fa";
 import ErrorCard from "../../../../components/ErrorCard";
 
-const API_BASE = "https://api.citydrivehire.com";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "https://api.citydrivehire.com";
 
 export default function CarDetail() {
   const { id } = useParams();

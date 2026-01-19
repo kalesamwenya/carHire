@@ -21,7 +21,7 @@ export default function EditCarPage() {
     const [carData, setCarData] = useState(null);
     const fileInputRef = useRef(null);
 
-    const Public_Api = "https://api.citydrivehire.com";
+    const Public_Api = process.env.NEXT_PUBLIC_API_URL || "https://api.citydrivehire.com";
 
     useEffect(() => {
         const fetchCarDetails = async () => {

@@ -21,7 +21,7 @@ export default function PartnerFleetPage() {
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 6;
 
-    const Public_Api = "https://api.citydrivehire.com";
+    const Public_Api = process.env.NEXT_PUBLIC_API_URL || "https://api.citydrivehire.com";
 
     // 1. Fetch Real Data
     useEffect(() => {

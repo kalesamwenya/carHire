@@ -10,10 +10,12 @@ export default function EarningsPage() {
     const [loading, setLoading] = useState(true);
     const partnerId = 1; // Replace with dynamic Auth ID
 
+    const BASE_API = process.env.NEXT_PUBLIC_API_URL || "https://api.citydrivehire.com"
+
     useEffect(() => {
         const fetchFinancialData = async () => {
             try {
-                const res = await axios.get(`https://api.citydrivehire.com/partners/get-earnings.php?user_id=${partnerId}`);
+                const res = await axios.get(`${BASE_API}/partners/get-earnings.php?user_id=${partnerId}`);
                 if (res.data.success) {
                     setCars(res.data.data);
                 }

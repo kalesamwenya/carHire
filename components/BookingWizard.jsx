@@ -12,7 +12,7 @@ import { generateBookingReceipt } from "@/utils/generateBookingReceipt";
 import { useSession } from 'next-auth/react';
 
 // --- CONSTANTS ---
-const API_BASE = "https://api.citydrivehire.com";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "https://api.citydrivehire.com";
 
 // --- UTILITY: Generate IDs ---
 const generateBookingIds = () => {

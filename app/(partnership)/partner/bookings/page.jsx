@@ -10,7 +10,7 @@ export default function BookingRequestsPage() {
     const [requests, setRequests] = useState([]);
     const [loading, setLoading] = useState(true);
 
-     const Public_Api = "https://api.citydrivehire.com";
+     const Public_Api = process.env.NEXT_PUBLIC_API_URL || "https://api.citydrivehire.com";
 
     const fetchRequests = async () => {
         try {

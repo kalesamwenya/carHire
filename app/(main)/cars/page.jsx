@@ -2,7 +2,8 @@ import CarListClient from '../../../components/CarListClient';
 
 export default async function CarsPage() {
     // Local API Endpoint
-    const Public_Api = "https://api.citydrivehire.com";
+   
+    const Public_Api = process.env.NEXT_PUBLIC_API_URL || "https://api.citydrivehire.com";
 
     try {
         const res = await fetch(`${Public_Api}/cars/get-cars.php`, { 

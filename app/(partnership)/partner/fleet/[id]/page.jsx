@@ -18,7 +18,7 @@ export default function VehicleDetailsPage() {
     const [loading, setLoading] = useState(true);
     const [activeImg, setActiveImg] = useState(0);
 
-    const Public_Api = "https://api.citydrivehire.com";
+    const Public_Api = process.env.NEXT_PUBLIC_API_URL || "https://api.citydrivehire.com";
 
     const getFullImagePath = (path) => {
     if (!path) return '';

@@ -16,12 +16,14 @@ export default function VerifyBooking() {
     const [booking, setBooking] = useState(null);
     const [loading, setLoading] = useState(true);
 
+    const BASE_API = process.env.NEXT_PUBLIC_API_URL || "https://api.citydrivehire.com";
+
     useEffect(() => {
         if (!bookingIdFromUrl || bookingIdFromUrl === 'undefined') return;
 
         const fetchBooking = async () => {
             try {
-                const res = await axios.get(`https://api.citydrivehire.com/bookings/get-booking.php?id=${bookingIdFromUrl}`);
+                const res = await axios.get(`${BASE_API}/bookings/get-booking.php?id=${bookingIdFromUrl}`);
                 setBooking(res.data);
             } catch (err) {
                 console.error("Verification Error:", err);

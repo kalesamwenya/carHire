@@ -18,6 +18,8 @@ export default function ContactPage() {
         message: ''
     });
 
+    const BASE_API = process.env.NEXT_PUBLIC_API_URL || "https://api.citydrivehire.com";
+
     useEffect(() => {
         const hour = new Date().getHours();
         const day = new Date().getDay();
@@ -41,7 +43,7 @@ export default function ContactPage() {
         setLoading(true);
 
         try {
-            const response = await fetch('https://api.citydrivehire.com/support/contact_messages.php', {
+            const response = await fetch(`${BASE_API}/support/contact_messages.php`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(formData),
