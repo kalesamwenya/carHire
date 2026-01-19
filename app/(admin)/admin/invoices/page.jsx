@@ -33,10 +33,12 @@ export default function InvoicesPage() {
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 5;
 
+    const BASE_API = process.env.NEXT_PUBLIC_API_URL || "https://api.citydrivehire.com";
+
     useEffect(() => {
         const fetchFinancials = async () => {
             try {
-                const res = await axios.get('https://api.citydrivehire.com/admin/get_financials.php');
+                const res = await axios.get(`${BASE_API}/admin/get_financials.php`);
                 setRecords(Array.isArray(res.data.data) ? res.data.data : []);
             } catch (err) { 
                 console.error("Fetch error:", err); 

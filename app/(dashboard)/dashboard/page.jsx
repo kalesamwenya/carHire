@@ -12,12 +12,14 @@ export default function EmitCommandCenter() {
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
 
+     const BASE_API = process.env.NEXT_PUBLIC_API_URL || "https://api.citydrivehire.com";
+
     // --- 1. Consolidated Fetch Function ---
     const fetchBookings = useCallback(async () => {
         if (!session?.user?.id) return;
         
         try {
-            const baseUrl = 'http://api.citydrivehire.local/bookings/me.php';
+            const baseUrl = `${BASE_API}/http://api.citydrivehire.local/bookings/me.php`;
             const res = await fetch(`${baseUrl}?user_id=${session.user.id}`, {
                 cache: 'no-store'
             });

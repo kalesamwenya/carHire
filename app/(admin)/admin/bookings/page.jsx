@@ -16,10 +16,12 @@ export default function BookingsPage() {
     const currentMonth = today.getMonth(); // 0 = Jan
     const currentYear = today.getFullYear();
 
+      const BASE_API = process.env.NEXT_PUBLIC_API_URL || "https://api.citydrivehire.com";
+
     useEffect(() => {
         const fetchBookings = async () => {
             try {
-                const res = await axios.get('https://api.citydrivehire.com/admin/dashboard_data.php');
+                const res = await axios.get(`${BASE_API}/admin/dashboard_data.php`);
                 const rawData = res.data.data.bookings || [];
                 
                 const mappedData = rawData.map(b => {

@@ -9,11 +9,11 @@ import ForecastChart from '@/components/ForecastChart';
 // Force dynamic to ensure we see real-time booking updates
 export const dynamic = 'force-dynamic';
 
-const API_URL = 'http://api.citydrivehire.local/admin/dashboard_data.php';
+const BASE_API = process.env.NEXT_PUBLIC_API_URL || "https://api.citydrivehire.com";
 
 async function getAdminDashboardData() {
     try {
-        const response = await axios.get(API_URL, { timeout: 5000 });
+        const response = await axios.get(`${BASE_API}/admin/dashboard_data.php`, { timeout: 5000 });
         // Using the .data.data pattern from your single PHP endpoint
         return response.data.data || { cars: [], users: [], bookings: [], reviews: [] };
     } catch (e) {

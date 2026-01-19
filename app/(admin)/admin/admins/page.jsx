@@ -12,11 +12,13 @@ export default function AdminListPage() {
     const [roleFilter, setRoleFilter] = useState("All");
     const [sortBy, setSortBy] = useState("name");
 
+     const BASE_API = process.env.NEXT_PUBLIC_API_URL || "https://api.citydrivehire.com";
+
     // Fetch Users from DB
     useEffect(() => {
         const fetchAdmins = async () => {
             try {
-                const res = await axios.get('https://api.citydrivehire.com/admin/list.php');
+                const res = await axios.get(`${BASE_API}/admin/list.php`);
                 setAdmins(res.data);
             } catch (err) {
                 console.error("Failed to fetch admins", err);

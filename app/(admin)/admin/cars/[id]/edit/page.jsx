@@ -27,11 +27,13 @@ export default function EditCarPage({ params: paramsPromise }) {
         featured: 0
     });
 
+    const BASE_API = process.env.NEXT_PUBLIC_API_URL || "https://api.citydrivehire.com";
+
     // 1. Fetch current data to populate the form
     useEffect(() => {
         async function fetchVehicle() {
             try {
-                const res = await fetch(`https://api.citydrivehire.com/admin/get_car_details.php?id=${id}`);
+                const res = await fetch(`${BASE_API}/admin/get_car_details.php?id=${id}`);
                 const json = await res.json();
                 if (json.success) {
                     setFormData(json.car);
@@ -53,7 +55,7 @@ export default function EditCarPage({ params: paramsPromise }) {
         setSaving(true);
         
         try {
-            const res = await fetch('https://api.citydrivehire.com/admin/update_car.php', {
+            const res = await fetch(`${BASE_API}/admin/update_car.php`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ ...formData, id: id }),

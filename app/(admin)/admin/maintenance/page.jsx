@@ -7,10 +7,13 @@ export default function MaintenancePage() {
     const [data, setData] = useState({ logs: [], overdue_count: 0, overdue_list: [] });
     const [loading, setLoading] = useState(true);
 
+     const BASE_API = process.env.NEXT_PUBLIC_API_URL || "https://api.citydrivehire.com";
+
+
     useEffect(() => {
         async function fetchMaintenance() {
             try {
-                const res = await fetch('https://api.citydrivehire.com/admin/get_all_maintenance.php');
+                const res = await fetch(`${BASE_API}/admin/get_all_maintenance.php`);
                 const json = await res.json();
                 if (json.success) setData(json);
             } catch (error) {

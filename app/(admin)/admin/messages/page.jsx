@@ -9,7 +9,10 @@ export default function MessagesPage() {
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
 
-    const API_URL = 'https://api.citydrivehire.com/support/contact_messages.php';
+
+    const API_URL =  rocess.env.NEXT_PUBLIC_API_URL || "https://api.citydrivehire.com";
+
+
 
     // 1. FETCH REAL DATA FROM PHP
     const fetchMessages = async () => {
@@ -37,7 +40,7 @@ export default function MessagesPage() {
         
         if (item.status === 'unread') {
             try {
-                const res = await fetch(API_URL, {
+                const res = await fetch(`${API_URL}/support/contact_messages.php`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ id: item.id, status: 'read' }),

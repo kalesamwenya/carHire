@@ -9,9 +9,10 @@ export default function AdminKYC() {
     const [selectedPartner, setSelectedPartner] = useState(null);
     const [loading, setLoading] = useState(true);
 
-    const Public_Api = 'https://api.citydrivehire.com';
-    const Base_Url = 'https://api.citydrivehire.com'; // Base URL for images
+    const Public_Api = process.env.NEXT_PUBLIC_API_URL || "https://api.citydrivehire.com";
+    const Base_Url = process.env.NEXT_PUBLIC_API_URL || "https://api.citydrivehire.com";// Base URL for images
 
+   
   useEffect(() => {
     fetch(`${Public_Api}/admin/get-pending-kyc.php`)
         .then(res => res.json())

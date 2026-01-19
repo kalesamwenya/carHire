@@ -61,9 +61,11 @@ export default function VisitorTracker() {
             }
         };
 
+         const BASE_API = process.env.NEXT_PUBLIC_API_URL || "https://api.citydrivehire.com";
+
         const sendData = async (payload) => {
             try {
-                await axios.post('https://api.citydrivehire.com/reports/log_detailed_visit.php', payload);
+                await axios.post(`${BASE_API}/reports/log_detailed_visit.php`, payload);
             } catch (err) {
                 console.error("Analytics Error:", err);
             }

@@ -7,10 +7,12 @@ export default function ReportsPage() {
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
 
+      const BASE_API = process.env.NEXT_PUBLIC_API_URL || "https://api.citydrivehire.com";
+
     useEffect(() => {
         const fetchStats = async () => {
             try {
-                const res = await axios.get('https://api.citydrivehire.com/reports/get_performance.php');
+                const res = await axios.get(`${BASE_API}/reports/get_performance.php`);
                 setData(res.data);
             } catch (err) {
                 console.error("Failed to load reports");

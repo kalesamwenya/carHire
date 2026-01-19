@@ -11,8 +11,10 @@ import {
 // Import the utility we created
 import { generateBookingReceipt } from '@/utils/generateBookingReceipt';
 
+ const BASE_API = process.env.NEXT_PUBLIC_API_URL || "https://api.citydrivehire.com";
+
 const api = axios.create({
-    baseURL: 'https://api.citydrivehire.com',
+    baseURL: BASE_API,
     timeout: 15000,
 });
 

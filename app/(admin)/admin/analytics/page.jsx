@@ -15,11 +15,13 @@ export default function AnalyticsPage() {
     const [showFleet, setShowFleet] = useState(false);
     const [showRevenue, setShowRevenue] = useState(false);
 
+      const BASE_API = process.env.NEXT_PUBLIC_API_URL || "https://api.citydrivehire.com";
+
     useEffect(() => {
         const fetchAnalytics = async () => {
             setLoading(true);
             try {
-                const res = await axios.get(`https://api.citydrivehire.com/reports/get_business_analytics.php?year=${year}`);
+                const res = await axios.get(`${BASE_API}/reports/get_business_analytics.php?year=${year}`);
                 // Ensure the response is an object and not a string (prevent malformed JSON errors)
                 const sanitizedData = typeof res.data === 'string' ? JSON.parse(res.data) : res.data;
                 setData(sanitizedData);

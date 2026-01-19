@@ -8,10 +8,12 @@ export default function UsersPage() {
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
 
+      const BASE_API = process.env.NEXT_PUBLIC_API_URL || "https://api.citydrivehire.com";
+
     useEffect(() => {
     async function fetchUsers() {
         try {
-            const res = await fetch('https://api.citydrivehire.com/admin/user-list.php');
+            const res = await fetch(`${BASE_API}/admin/user-list.php`);
             if (res.ok) {
                 const jsonResponse = await res.json();
                 

@@ -49,10 +49,12 @@ export default function CarDetailsPage() {
         fetchAllDetails();
     }, [id]);
 
+    const BASE_API = process.env.NEXT_PUBLIC_API_URL || "https://api.citydrivehire.com";
+
     const handleAddService = async (e) => {
         e.preventDefault();
         try {
-            const res = await fetch('https://api.citydrivehire.com/admin/add_service_log.php', {
+            const res = await fetch(`${BASE_API}/admin/add_service_log.php`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ ...formData, car_id: id }),

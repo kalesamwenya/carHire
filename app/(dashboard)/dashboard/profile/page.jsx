@@ -10,8 +10,10 @@ import {
     FaCrown, FaLeaf, FaBolt, FaShieldAlt 
 } from 'react-icons/fa';
 
+ const BASE_API = process.env.NEXT_PUBLIC_API_URL || "https://api.citydrivehire.com";
+
 const api = axios.create({
-    baseURL: 'https://api.citydrivehire.com',
+    baseURL: BASE_API,
     timeout: 15000,
 });
 

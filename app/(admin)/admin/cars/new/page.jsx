@@ -46,6 +46,8 @@ export default function AddCarPage() {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
+    const BASE_API = process.env.NEXT_PUBLIC_API_URL || "https://api.citydrivehire.com";
+
     const handleSubmit = async (e) => {
         if (e) e.preventDefault();
         if (selectedFiles.length === 0) return toast.error("Please upload at least one image.");
@@ -64,7 +66,7 @@ export default function AddCarPage() {
         });
 
         try {
-            const res = await fetch('https://api.citydrivehire.com/partners/save-car.php', {
+            const res = await fetch(`${BASE_API}/partners/save-car.php`, {
                 method: 'POST',
                 body: data,
             });

@@ -5,7 +5,8 @@ import Link from 'next/link';
 import { FaEdit, FaTrash, FaPlus, FaEye, FaSpinner, FaCar, FaSearch, FaFilter, FaSortAmountDown } from 'react-icons/fa';
 
 // Define your API base for images
-const API_BASE_URL = 'https://api.citydrivehire.com';
+const API_BASE_URL =  process.env.NEXT_PUBLIC_API_URL || "https://api.citydrivehire.com";
+  
 
 export default function CarsPage() {
     const [cars, setCars] = useState([]);

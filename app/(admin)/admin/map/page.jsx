@@ -22,6 +22,9 @@ export default function MapPage() {
 
     const center = useMemo(() => [-15.4167, 28.2833], []); 
 
+     const BASE_API = process.env.NEXT_PUBLIC_API_URL || "https://api.citydrivehire.com";
+
+
     useEffect(() => {
         setIsClient(true);
         
@@ -38,7 +41,7 @@ export default function MapPage() {
 
         const fetchLivePositions = async () => {
             try {
-                const res = await fetch('https://api.citydrivehire.com/admin/get_cars.php');
+                const res = await fetch(`${BASE_API}/admin/get_cars.php`);
                 const json = await res.json();
                 if (json.success) setVehicles(json.cars);
             } catch (error) {

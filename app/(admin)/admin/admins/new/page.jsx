@@ -16,6 +16,8 @@ export default function AddAdminPage() {
         email: ''
     });
 
+      const BASE_API = process.env.NEXT_PUBLIC_API_URL || "https://api.citydrivehire.com";
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!form.name || !form.email) {
@@ -25,7 +27,7 @@ export default function AddAdminPage() {
         setBusy(true);
         try {
             // API call to create the admin user
-            const response = await axios.post('https://api.citydrivehire.com/admin/add-member.php', {
+            const response = await axios.post(`${BASE_API}/admin/add-member.php`, {
                 name: form.name,
                 email: form.email.trim().toLowerCase(),
                 role: role

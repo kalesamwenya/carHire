@@ -10,11 +10,13 @@ export default function StatisticsPage() {
     const [stats, setStats] = useState(null);
     const [loading, setLoading] = useState(true);
 
+      const BASE_API = process.env.NEXT_PUBLIC_API_URL || "https://api.citydrivehire.com";
+
     useEffect(() => {
         const fetchStats = async () => {
             try {
                 // Replace with your actual local API URL
-                const res = await axios.get('https://api.citydrivehire.com/reports/get_fleet_stats.php');
+                const res = await axios.get(`${BASE_API}/reports/get_fleet_stats.php`);
                 setStats(res.data);
             } catch (err) {
                 console.error("Stats Fetch Error", err);
