@@ -56,7 +56,7 @@ export default function SignUpPage() {
         return Object.keys(e).length === 0;
     }
 
-    const BASE_API = process.env.NEXT_PUBLIC_API_URL || "https://api.citydrivehire.com";;
+    const BASE_API = process.env.NEXT_PUBLIC_API_URL || "https://api.citydrivehire.com";
 
    async function onSubmit(e) {
     e.preventDefault();

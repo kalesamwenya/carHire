@@ -29,27 +29,34 @@ function VerifyContent() {
 
         const BASE_API = process.env.NEXT_PUBLIC_API_URL || "https://api.citydrivehire.com";
 
-        const verifyAccount = async () => {
-            try {
-                // Calling your PHP backend
-                const response = await axios.get(`${BASE_API}/users/verify.php`, {
-                    params: { token, email }
-                });
-
-                setStatus("success");
-                setMessage(response.data.message || "Account verified successfully!");
-                toast.success("Verification complete!");
-
-                // Auto-redirect to signin after 3 seconds
-                setTimeout(() => {
-                    router.push(`/auth/signin?verified=true&email=${encodeURIComponent(email)}`);
-                }, 3000);
-
-            } catch (err) {
-                setStatus("error");
-                setMessage(err.response?.data?.message || "Link expired or invalid.");
+       // Inside VerifyContent useEffect
+const verifyAccount = async () => {
+    try {
+        const response = await axios.get(`${BASE_API}/users/verify.php`, {
+            params: { token, email },
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
             }
-        };
+        });
+
+        // PHP now returns 200 JSON
+        setStatus("success");
+        setMessage(response.data.message || "Account verified successfully!");
+        toast.success("Verification complete!");
+
+        setTimeout(() => {
+            router.push(`/auth/signin?verified=true&email=${encodeURIComponent(email)}`);
+        }, 3000);
+
+    } catch (err) {
+        setStatus("error");
+        // Catch the JSON error message from PHP
+        const errorMsg = err.response?.data?.message || "Link expired or invalid.";
+        setMessage(errorMsg);
+        toast.error(errorMsg);
+    }
+};
 
         verifyAccount();
     }, [searchParams, router]);
