@@ -19,7 +19,7 @@ export default function EmitCommandCenter() {
         if (!session?.user?.id) return;
         
         try {
-            const baseUrl = `${BASE_API}/http://api.citydrivehire.local/bookings/me.php`;
+            const baseUrl = `${BASE_API}/bookings/me.php`;
             const res = await fetch(`${baseUrl}?user_id=${session.user.id}`, {
                 cache: 'no-store'
             });
