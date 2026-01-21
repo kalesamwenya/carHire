@@ -35,12 +35,12 @@ export default async function AdminDashboard() {
     const partnerCount = users.filter(u => u.role === 'partner').length;
 
     return (
-        <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-8 animate-in fade-in duration-700">
+        <div className="p-4 md:p-8 max-w-8xl mx-auto space-y-8 animate-in fade-in duration-700">
             {/* Header Section */}
             <header className="flex justify-between items-end">
                 <div>
                     <h1 className="text-4xl font-black text-slate-900 tracking-tight">Control Tower</h1>
-                    <p className="text-slate-500 font-medium">Emit Photography Business Suite</p>
+                    <p className="text-slate-500 font-medium">City Drive Hire Business Suite</p>
                 </div>
                 <div className="hidden md:block text-right">
                     <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">System Status</p>

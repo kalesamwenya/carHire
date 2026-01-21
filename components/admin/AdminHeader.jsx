@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
-import { FaBars, FaSearch, FaShieldAlt } from 'react-icons/fa';
+import { FaBars, FaCarSide, FaSearch, FaShieldAlt } from 'react-icons/fa';
 
 // Import the new independent components
 import MessagesDropdown from '@/components/admin/header/MessagesDropdown';
@@ -42,11 +42,18 @@ export default function AdminHeader({ user, onMenuClick }) {
         <>
             {/* Mobile Header */}
             <header className="lg:hidden flex items-center justify-between p-4 bg-white border-b border-slate-200 shrink-0">
-                <div className="flex items-center gap-2">
-                     <div className="w-8 h-8 bg-slate-900 rounded flex items-center justify-center">
-                        <FaShieldAlt className="text-amber-500 text-sm" />
-                     </div>
-                     <span className="font-bold text-slate-900">Admin Panel</span>
+                 <div className="flex items-center gap-3 group">
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-105 transition-all bg-slate-900 text-green-500`}>
+                        <FaCarSide className="text-xl" />
+                    </div>
+                    <div>
+                        <h1 className="text-xl font-bold tracking-tight leading-none text-slate-900">
+                            City<span className="text-green-600">Drive</span>
+                        </h1>
+                        <p className="text-[10px] uppercase tracking-widest font-bold text-slate-500">
+                            Hire
+                        </p>
+                    </div>
                 </div>
                 <button
                     onClick={onMenuClick}

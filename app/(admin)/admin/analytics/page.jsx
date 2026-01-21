@@ -6,6 +6,7 @@ import {
   FaMapMarkerAlt, FaCarSide, FaHistory, 
   FaMoneyBillWave 
 } from 'react-icons/fa';
+import CityDriveLoader from '@/components/CityDriveLoader';
 
 export default function AnalyticsPage() {
     const [data, setData] = useState(null);
@@ -47,7 +48,7 @@ const fetchAnalytics = async () => {
         fetchAnalytics();
     }, [year]);
 
-    if (loading) return <div className="p-20 text-center animate-pulse text-gray-400 font-bold">Synchronizing Database...</div>;
+    if (loading) return <CityDriveLoader message="sycing analytics data"/>;
     
     // Safety check: ensure 'success' is true and 'chart' exists
     if (!data || data.success === false) {

@@ -22,6 +22,7 @@ import {
     Cell, 
     YAxis 
 } from 'recharts';
+import CityDriveLoader from '@/components/CityDriveLoader';
 
 export default function InvoicesPage() {
     const [records, setRecords] = useState([]);
@@ -114,39 +115,7 @@ export default function InvoicesPage() {
 
     const paginatedRecords = filteredRecords.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
-if (loading) return (
-    <div className="h-screen w-full flex flex-col items-center justify-center bg-white">
-        {/* Sleek Minimalist Spinner */}
-        <div className="relative w-16 h-16">
-            {/* Outer Ring */}
-            <div className="absolute inset-0 border-4 border-green-100 rounded-full"></div>
-            {/* Animated Brand Ring */}
-            <div className="absolute inset-0 border-4 border-green-600 rounded-full border-t-transparent animate-spin"></div>
-        </div>
-
-        {/* Company Branding */}
-        <div className="mt-8 text-center">
-            <h2 className="text-2xl font-black text-slate-900 tracking-tighter">
-                CITYDRIVE <span className="text-green-600">HIRE</span>
-            </h2>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.3em] mt-1 animate-pulse">
-                Fetching Financials
-            </p>
-        </div>
-
-        {/* Subtle Progress Bar */}
-        <div className="mt-6 w-48 h-1 bg-gray-100 rounded-full overflow-hidden">
-            <div className="h-full bg-green-700 w-1/3 rounded-full animate-[loading_1.5s_infinite_ease-in-out]"></div>
-        </div>
-
-        <style jsx>{`
-            @keyframes loading {
-                0% { transform: translateX(-100%); }
-                100% { transform: translateX(200%); }
-            }
-        `}</style>
-    </div>
-);
+ if (loading) return <CityDriveLoader message="sycing invoices data"/>;
     return (
         <div className="max-w-8xl mx-auto p-4 md:p-6 space-y-6 bg-gray-50 min-h-screen">
             

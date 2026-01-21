@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { FaCheck, FaTimes, FaList, FaCalendarAlt, FaChevronDown, FaEye, FaUndo, FaCheckDouble, FaTrash, FaUser, FaCar, FaClock } from 'react-icons/fa';
+import CityDriveLoader from '@/components/CityDriveLoader';
 
 export default function BookingsPage() {
     const [view, setView] = useState('list');
@@ -76,7 +77,7 @@ export default function BookingsPage() {
         }
     };
 
-    if (loading) return <div className="p-10 text-center font-bold text-gray-400 animate-pulse">Loading Bookings...</div>;
+    if (loading) return <CityDriveLoader message="sycing booking data"/>;
 
     return (
         <div className="relative" onClick={() => setActiveDropdown(null)}>
@@ -84,7 +85,7 @@ export default function BookingsPage() {
             <div className="flex flex-col md:flex-row justify-between items-end mb-6 gap-4">
                 <div>
                     <h2 className="text-2xl font-bold text-gray-800">Booking Requests</h2>
-                    <p className="text-sm text-gray-500">Manage Emit Photography schedule.</p>
+                    <p className="text-sm text-gray-500">Manage City Drive Hire schedule.</p>
                 </div>
                 <div className="bg-white p-1 rounded-lg border border-gray-200 flex shadow-sm">
                     <button onClick={() => setView('list')} className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${view === 'list' ? 'bg-slate-900 text-white shadow' : 'text-gray-500'}`}><FaList className="inline mr-2"/> List</button>

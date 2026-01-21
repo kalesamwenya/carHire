@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { FaEdit, FaTrash, FaPlus, FaEye, FaSpinner, FaCar, FaSearch, FaFilter, FaSortAmountDown } from 'react-icons/fa';
+import CityDriveLoader from '@/components/CityDriveLoader';
 
 // Define your API base for images
 const API_BASE_URL =  process.env.NEXT_PUBLIC_API_URL || "https://api.citydrivehire.com";
@@ -55,11 +56,7 @@ export default function CarsPage() {
         return ["All", ...Array.from(types)];
     }, [cars]);
 
-    if (loading) return (
-        <div className="flex justify-center items-center h-64 text-green-600">
-            <FaSpinner className="animate-spin text-2xl" />
-        </div>
-    );
+     if (loading) return <CityDriveLoader message="sycing fleet data"/>;
 
     return (
         <div>
@@ -67,7 +64,7 @@ export default function CarsPage() {
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
                 <div>
                     <h2 className="text-2xl font-bold text-gray-800">Fleet Management</h2>
-                    <p className="text-sm text-gray-500">Manage your vehicle inventory for Emit Photography.</p>
+                    <p className="text-sm text-gray-500">Manage your vehicle inventory for City Drive.</p>
                 </div>
                 <Link href="/admin/cars/new" className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-medium transition-all shadow-sm active:scale-95">
                     <FaPlus /> Add Vehicle

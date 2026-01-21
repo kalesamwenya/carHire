@@ -1,5 +1,6 @@
 'use client';
 
+import CityDriveLoader from '@/components/CityDriveLoader';
 import { useState, useEffect } from 'react';
 import { FaTools, FaCheckCircle, FaExclamationTriangle, FaSpinner, FaHistory } from 'react-icons/fa';
 
@@ -25,11 +26,7 @@ export default function MaintenancePage() {
         fetchMaintenance();
     }, []);
 
-    if (loading) return (
-        <div className="flex justify-center items-center h-64 text-slate-800">
-            <FaSpinner className="animate-spin text-2xl" />
-        </div>
-    );
+    if (loading) return <CityDriveLoader message="sycing maintaince data"/>;
 
     return (
         <div className="space-y-6">

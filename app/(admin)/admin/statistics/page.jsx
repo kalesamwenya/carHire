@@ -5,6 +5,7 @@ import {
     FaCar, FaUserFriends, FaGasPump, FaWrench, 
     FaExclamationTriangle, FaCheckCircle, FaTools 
 } from 'react-icons/fa';
+import CityDriveLoader from '@/components/CityDriveLoader';
 
 export default function StatisticsPage() {
     const [stats, setStats] = useState(null);
@@ -27,7 +28,7 @@ export default function StatisticsPage() {
         fetchStats();
     }, []);
 
-    if (loading) return <div className="p-20 text-center animate-pulse text-gray-400 font-bold italic">Gathering Fleet Intelligence...</div>;
+    if (loading) return <CityDriveLoader message="Gathering Fleet Intelligence"/>;
     
     // ERROR PROTECTION: Fallback to empty arrays if data is missing
     const categories = stats?.categories || [];

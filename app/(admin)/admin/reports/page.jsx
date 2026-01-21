@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { FaArrowUp, FaArrowDown, FaChartBar, FaCalendarDay, FaCircle, FaTrophy } from 'react-icons/fa';
+import CityDriveLoader from '@/components/CityDriveLoader';
 
 export default function ReportsPage() {
     const [data, setData] = useState(null);
@@ -23,12 +24,7 @@ export default function ReportsPage() {
         fetchStats();
     }, []);
 
-    if (loading) return (
-        <div className="flex flex-col items-center justify-center h-64 space-y-4">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
-            <p className="text-gray-400 font-medium animate-pulse">Analyzing Fleet Performance...</p>
-        </div>
-    );
+    if (loading) return <CityDriveLoader message="sycing reports data"/>;
 
     // Safeguard against missing data
     if (!data || !data.revenue) return <div className="p-10 text-center text-red-500 bg-red-50 rounded-xl border border-red-100">Database connection error or no data found.</div>;

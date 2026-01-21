@@ -1,5 +1,6 @@
 'use client';
 
+import CityDriveLoader from '@/components/CityDriveLoader';
 import { useState, useEffect } from 'react';
 import { FaPaperPlane, FaSearch, FaCircle, FaUserCircle, FaTrash } from 'react-icons/fa';
 
@@ -49,6 +50,8 @@ const handleDelete = async (id) => {
         }
     } catch (error) {
         console.error("Delete failed:", error);
+    } finally {
+            setPwdLoading(false);
     }
 };
 
@@ -82,7 +85,8 @@ const handleDelete = async (id) => {
         i.message.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
-    if (loading) return <div className="p-10 text-center text-slate-500">Loading Inbox...</div>;
+    if (loading) return <CityDriveLoader message="sycing messages"/>;
+
 
     return (
         <div className="h-[calc(100vh-8rem)] bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden flex flex-col md:flex-row">

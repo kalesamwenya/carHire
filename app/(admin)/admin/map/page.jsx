@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { FaSpinner, FaCircle, FaHistory, FaTimes } from 'react-icons/fa';
 import 'leaflet/dist/leaflet.css';
+import CityDriveLoader from '@/components/CityDriveLoader';
 
 // Dynamically import Map components
 const MapContainer = dynamic(() => import('react-leaflet').then((mod) => mod.MapContainer), { ssr: false });
@@ -65,11 +66,8 @@ export default function MapPage() {
     const onlineCount = vehicles.filter(v => v.latitude && v.longitude && getStatus(v.updated_at)).length;
     const offlineCount = vehicles.length - onlineCount;
 
-    if (!isClient || loading) return (
-        <div className="h-96 flex items-center justify-center text-green-600">
-            <FaSpinner className="animate-spin text-3xl" />
-        </div>
-    );
+
+     if (loading) return <CityDriveLoader message="sycing map data"/>;
 
     return (
         <div className="h-[calc(100vh-8rem)] flex flex-col">

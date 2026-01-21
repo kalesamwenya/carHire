@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { FaCheck, FaTimes, FaEye, FaInbox, FaSpinner } from 'react-icons/fa';
 import { toast, Toaster } from 'react-hot-toast';
+import CityDriveLoader from '@/components/CityDriveLoader';
 
 export default function AdminKYC() {
     const [partners, setPartners] = useState([]);
@@ -52,14 +53,7 @@ export default function AdminKYC() {
         }
     };
 
-    if (loading) {
-        return (
-            <div className="flex flex-col items-center justify-center p-20 text-slate-500">
-                <FaSpinner className="animate-spin text-3xl mb-4 text-blue-600" />
-                <p>Fetching pending NRCs...</p>
-            </div>
-        );
-    }
+    if (loading) return <CityDriveLoader message="sycing kyc data"/>;
 
     return (
         <div className="space-y-6">
