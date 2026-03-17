@@ -19,7 +19,8 @@ import {
     FaUserShield,
     FaEnvelope,
     FaLifeRing, FaBell,
-    FaCarSide
+    FaCarSide,
+    FaRobot
 } from 'react-icons/fa';
 
 export default function AdminSidebar({ isOpen, setIsOpen }) {
@@ -63,6 +64,14 @@ export default function AdminSidebar({ isOpen, setIsOpen }) {
                 { name: 'Messages', href: '/admin/messages', icon: FaEnvelope },
                 { name: 'Help Desk', href: '/admin/help', icon: FaLifeRing }, // Import FaLifeRing
                 { name: 'Notifications', href: '/admin/notifications', icon: FaBell },
+            ]
+        },
+        {
+            title: "Chatbot",
+            items: [
+                 { name: 'Bot', href: '/admin/chatbot', icon: FaRobot },
+                { name: 'Keywords', href: '/admin/chatbot/keywords', icon: FaRobot },
+                { name: 'Unmatched', href: '/admin/chatbot/unmatched', icon: FaRobot },
             ]
         },
         {
@@ -111,7 +120,7 @@ export default function AdminSidebar({ isOpen, setIsOpen }) {
                 </div>
 
                 {/* NAVIGATION LINKS */}
-                <nav className="flex-1 overflow-y-auto py-6 px-3 space-y-8 scrollbar-thin scrollbar-thumb-slate-700">
+                <nav className="flex-1 overflow-y-auto py-6 px-3 space-y-8 scrollbar-thin scrollbar-thumb-slate-700 hide-scrollbar">
                     {menuGroups.map((group, idx) => (
                         <div key={idx}>
                             <h3 className="px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
@@ -151,7 +160,16 @@ export default function AdminSidebar({ isOpen, setIsOpen }) {
                         Sign Out
                     </button>
                 </div>
-            </aside>
+                        </aside>
+                        <style jsx global>{`
+                            .hide-scrollbar::-webkit-scrollbar {
+                                display: none;
+                            }
+                            .hide-scrollbar {
+                                -ms-overflow-style: none;
+                                scrollbar-width: none;
+                            }
+                        `}</style>
         </>
     );
 }

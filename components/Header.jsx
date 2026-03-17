@@ -31,7 +31,7 @@ export default function Header() {
 
     const navLinks = [
         { name: 'Browse Fleet', href: '/cars' },
-        { name: 'Book', href: '/booking' },
+        { name: 'Book a Ride', href: '/booking' },
     ];
 
     return (

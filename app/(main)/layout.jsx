@@ -4,6 +4,7 @@ import Providers from '../../lib/Providers';
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
 import PromoBanner from "@/components/PromoBanner";
+import Chatbot from "@/components/Chatbot";
 
 export const metadata = {
     title: 'CarHire',
@@ -19,6 +20,7 @@ export default function MainLayout({ children }) {
             </main>
             <PromoBanner />
             <Footer />
+            <Chatbot />
         </Providers>
     );
 }

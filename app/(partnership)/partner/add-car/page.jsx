@@ -11,8 +11,7 @@ import { toast, Toaster } from 'react-hot-toast';
 export default function AddCarPage() {
     const { data: session, update } = useSession();
     const [loading, setLoading] = useState(false);
-    const [checkingStatus, setCheckingStatus] = useState(true);
-    const [isVerified, setIsVerified] = useState(false);
+    // KYC check removed
     
     // IMAGE STATES - Updated for multiple images
     const [images, setImages] = useState([]); 
@@ -22,20 +21,7 @@ export default function AddCarPage() {
     const Public_Api = process.env.NEXT_PUBLIC_API_URL || "https://api.citydrivehire.com";
 
     // REAL-TIME STATUS CHECK (From our previous step)
-    useEffect(() => {
-        const verifyPartnerStatus = async () => {
-            if (!session?.user?.id) return;
-            try {
-                const res = await fetch(`${Public_Api}/partners/get-kyc-status.php?user_id=${session.user.id}`);
-                const data = await res.json();
-                if (data.success && data.kyc_status === 'verified') {
-                    setIsVerified(true);
-                    update({ ...session, user: { ...session.user, kyc_status: 'verified' } });
-                }
-            } catch (error) { console.error(error); } finally { setCheckingStatus(false); }
-        };
-        verifyPartnerStatus();
-    }, [session, update]);
+    // KYC check removed
 
     // Handle Multi-Image Selection
     const handleImageChange = (e) => {
@@ -56,7 +42,6 @@ export default function AddCarPage() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!isVerified) return;
         if (images.length === 0) {
             toast.error("Please upload at least one vehicle image.");
             return;
@@ -93,48 +78,22 @@ export default function AddCarPage() {
         }
     };
 
-    if (checkingStatus) {
-        return (
-            <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50">
-                <FaSpinner className="animate-spin text-green-600 text-4xl mb-4" />
-                <p className="text-gray-500 font-medium">Verifying your status...</p>
-            </div>
-        );
-    }
+
 
     return (
         <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative">
             <Toaster position="top-center" />
 
-            {/* KYC LOCK OVERLAY (Your original design) */}
-            {!isVerified && (
-                <div className="absolute inset-0 z-50 bg-gray-50/60 backdrop-blur-[3px] flex items-start justify-center pt-20">
-                    <div className="bg-white p-8 rounded-2xl shadow-2xl border border-amber-100 max-w-md text-center">
-                        <div className="w-16 h-16 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <FaLock size={30} />
-                        </div>
-                        <h2 className="text-xl font-bold text-gray-900">Verification Required</h2>
-                        <p className="text-gray-500 mt-2 mb-6 text-sm">
-                            Complete your profile to unlock vehicle listings for **Emit Photography**.
-                        </p>
-                        <button 
-                            onClick={() => window.location.href = '/partner/kyc'}
-                            className="w-full bg-green-600 text-white py-3 rounded-xl font-bold hover:bg-green-700 transition-all shadow-md"
-                        >
-                            Go to Kyc
-                        </button>
-                    </div>
-                </div>
-            )}
 
-            <div className={`mb-8 ${!isVerified ? 'opacity-30' : ''}`}>
+
+            <div className="mb-8">
                 <h1 className="text-2xl font-bold text-gray-900">List a New Vehicle</h1>
                 <p className="text-gray-500 mt-1 text-sm">Fill in the details below to add your car to the CityDrive fleet.</p>
             </div>
 
             <form 
                 onSubmit={handleSubmit} 
-                className={`grid grid-cols-1 lg:grid-cols-3 gap-8 items-start transition-opacity duration-500 ${!isVerified ? 'opacity-30 pointer-events-none' : ''}`}
+                className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start transition-opacity duration-500"
             >
                 {/* LEFT COLUMN */}
                 <div className="lg:col-span-2 space-y-6">
