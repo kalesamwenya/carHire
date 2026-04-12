@@ -147,7 +147,7 @@ export default function Chatbot() {
           {/* Input Area */}
           <form onSubmit={sendMessage} className="p-4 bg-white border-t border-gray-100 flex items-center gap-2">
             <input
-              className="flex-1 bg-gray-100 border-none rounded-full px-4 py-3 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:bg-white transition-all outline-none"
+              className="flex-1 bg-gray-100 text-black border-none rounded-full px-4 py-3 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:bg-white transition-all outline-none"
               value={input}
               onChange={e => setInput(e.target.value)}
               placeholder="Write a message..."

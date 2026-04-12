@@ -20,7 +20,8 @@ import {
     FaEnvelope,
     FaLifeRing, FaBell,
     FaCarSide,
-    FaRobot
+    FaRobot,
+    FaComments
 } from 'react-icons/fa';
 
 export default function AdminSidebar({ isOpen, setIsOpen }) {
@@ -61,8 +62,9 @@ export default function AdminSidebar({ isOpen, setIsOpen }) {
         {
             title: "Communication",
             items: [
+                { name: 'Chat', href: '/admin/chat', icon: FaComments },
                 { name: 'Messages', href: '/admin/messages', icon: FaEnvelope },
-                { name: 'Help Desk', href: '/admin/help', icon: FaLifeRing }, // Import FaLifeRing
+                { name: 'Help Desk', href: '/admin/help', icon: FaLifeRing },
                 { name: 'Notifications', href: '/admin/notifications', icon: FaBell },
             ]
         },

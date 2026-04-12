@@ -115,7 +115,7 @@ export default function ContactPage() {
                 </motion.div>
             </div>
 
-            <div className="max-w-7xl mx-auto px-6 -mt-20 mb-20 relative z-20">
+            <div className="max-w-7xl mx-auto px-6 -mt-20 mb-20 pb-[3rem] relative z-20">
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
                     {/* --- LEFT COLUMN --- */}
@@ -150,6 +150,13 @@ export default function ContactPage() {
                                         <a href="mailto:info@citydrive.com" className="text-lg text-slate-600 hover:text-blue-600">info@citydrive.com</a>
                                     </div>
                                 </div>
+                                <div className="flex items-start gap-4 group">
+                                    <div className="w-12 h-12 bg-white text-slate-600 rounded-2xl flex items-center justify-center text-xl shadow-sm group-hover:bg-slate-600 group-hover:text-white transition-colors"><FaMapMarkerAlt /></div>
+                                    <div>
+                                        <p className="font-bold text-slate-900 text-sm uppercase tracking-wide">Office Address</p>
+                                        <span className="text-lg text-slate-600">CityDrive Car Hire, 123 Main Street, Lusaka, Zambia</span>
+                                    </div>
+                                </div>
                             </div>
                             
                             <a href="https://wa.me/260972338115" target="_blank" rel="noreferrer" className="mt-12 flex items-center justify-center gap-2 w-full py-4 bg-green-500 hover:bg-green-600 text-white rounded-xl font-bold transition-all shadow-lg shadow-green-200/50">
@@ -174,6 +181,18 @@ export default function ContactPage() {
                                         <label className="text-sm font-bold text-slate-700">Email Address</label>
                                         <input name="email" value={formData.email} onChange={handleChange} required type="email" placeholder="john@example.com" className="w-full bg-slate-50 border border-transparent rounded-xl px-4 py-3 focus:bg-white focus:ring-2 focus:ring-green-500 outline-none transition-all" />
                                     </div>
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-sm font-bold text-slate-700">Subject</label>
+                                    <select name="subject" value={formData.subject} onChange={handleChange} required className="w-full bg-slate-50 border border-transparent rounded-xl px-4 py-3 focus:bg-white focus:ring-2 focus:ring-green-500 outline-none transition-all">
+                                        <option>General Inquiry</option>
+                                        <option>Car Booking</option>
+                                        <option>Corporate Hire</option>
+                                        <option>Partnership</option>
+                                        <option>Feedback</option>
+                                        <option>Complaint</option>
+                                        <option>Other</option>
+                                    </select>
                                 </div>
                                 <div className="space-y-2">
                                     <label className="text-sm font-bold text-slate-700">Message</label>

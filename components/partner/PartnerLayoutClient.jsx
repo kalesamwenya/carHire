@@ -1,12 +1,17 @@
 'use client';
 
+
 import { useState } from 'react';
 import PartnerSidebar from './PartnerSidebar';
 import PartnerHeader from './PartnerHeader';
+import ChatBubble from '../ui/ChatBubble';
+import AdminPartnerChat from '../ui/AdminPartnerChat';
+import { fetchChatMessages, sendChatMessage } from '@/lib/chat';
 
 export default function PartnerLayoutClient({ user, children }) {
     const [sidebarOpen, setSidebarOpen] = useState(false);
-
+    const [showChat, setShowChat] = useState(false);
+    const demoAdmin = { id: 1, name: 'Admin Demo', role: 'admin' };
     return (
         <div className="flex h-screen bg-gray-50 overflow-hidden">
             {/* MOBILE OVERLAY */}
@@ -27,7 +32,6 @@ export default function PartnerLayoutClient({ user, children }) {
             {/* CONTENT AREA */}
             <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
                 {/* HEADER COMPONENT */}
-                {/* Pass the KYC Status here */}
                 <PartnerHeader 
                     setIsOpen={setSidebarOpen} 
                     kycStatus={user.kyc_status} 
@@ -38,6 +42,24 @@ export default function PartnerLayoutClient({ user, children }) {
                     {children}
                 </main>
             </div>
+            {/* Chat Bubble (always visible) */}
+            <ChatBubble onClick={() => setShowChat(v => !v)} unreadCount={2} />
+            {/* Chat Modal (simple overlay) */}
+            {showChat && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+                    <div className="bg-white rounded-2xl shadow-2xl p-0 max-w-lg w-full relative">
+                        <button className="absolute top-2 right-2 text-slate-400 hover:text-red-500 text-2xl font-bold" onClick={() => setShowChat(false)}>&times;</button>
+                        <div className="p-4">
+                            <AdminPartnerChat
+                                user={user}
+                                recipient={demoAdmin}
+                                fetchMessages={fetchChatMessages}
+                                sendMessage={sendChatMessage}
+                            />
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

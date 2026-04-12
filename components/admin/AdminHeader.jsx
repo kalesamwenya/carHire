@@ -8,6 +8,7 @@ import { FaBars, FaCarSide, FaSearch, FaShieldAlt } from 'react-icons/fa';
 import MessagesDropdown from '@/components/admin/header/MessagesDropdown';
 import NotificationsDropdown from '@/components/admin/header/NotificationsDropdown';
 import ProfileDropdown from '@/components/admin/header/ProfileDropdown';
+import ChatDropdown from '@/components/ui/ChatDropdown';
 
 export default function AdminHeader({ user, onMenuClick }) {
     const pathname = usePathname();
@@ -85,22 +86,19 @@ export default function AdminHeader({ user, onMenuClick }) {
 
             {/* --- RIGHT SIDE: Components --- */}
             <div className="flex items-center gap-4" ref={actionContainerRef}>
-
+                <ChatDropdown unreadCount={2} />
                 <MessagesDropdown
                     isOpen={activeDropdown === 'messages'}
                     onToggle={() => toggle('messages')}
                 />
-
                 <NotificationsDropdown
                     isOpen={activeDropdown === 'notifications'}
                     onToggle={() => toggle('notifications')}
                 />
-
                 <ProfileDropdown
                     isOpen={activeDropdown === 'profile'}
                     onToggle={() => toggle('profile')}
                 />
-
             </div>
         </header>
         </>

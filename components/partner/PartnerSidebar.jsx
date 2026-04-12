@@ -13,6 +13,7 @@ export default function PartnerSidebar({ user, isOpen, setIsOpen }) {
 
     const navigation = [
         { name: 'Dashboard', href: '/partner', icon: FaChartPie },
+        { name: 'Chat', href: '/partner/chat', icon: FaComments },
         { name: 'Notifications', href: '/partner/notifications', icon: FaBell },
         { name: 'Analytics', href: '/partner/analytics', icon: FaChartBar },
         { name: 'My Fleet', href: '/partner/fleet', icon: FaCar },

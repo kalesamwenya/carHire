@@ -5,14 +5,19 @@ import axios from 'axios';
 export default function VisitorTracker() {
     useEffect(() => {
         const trackVisitor = async () => {
-            // 1. Handle Unique Visitor ID
+            // 1. Check if tracked today to save server bandwidth
+            const lastTracked = localStorage.getItem('city_drive_last_tracked');
+            const today = new Date().toDateString();
+            if (lastTracked === today) return;
+
+            // 2. Handle Unique Visitor ID
             let vId = localStorage.getItem('city_drive_v_id');
             if (!vId) {
                 vId = 'uid-' + Math.random().toString(36).substr(2, 9) + Date.now();
                 localStorage.setItem('city_drive_v_id', vId);
             }
 
-            // 2. Comprehensive OS & Device Detection
+            // 3. Device Detection
             const ua = window.navigator.userAgent;
             const platform = window.navigator.platform;
             
@@ -42,37 +47,38 @@ export default function VisitorTracker() {
                 lng: null
             };
 
-            // 3. Geolocation & Dispatch
+            const sendData = async (payload) => {
+                const BASE_API = process.env.NEXT_PUBLIC_API_URL || "https://api.citydrivehire.com";
+                try {
+                    const res = await axios.post(`${BASE_API}/reports/log_detailed_visit.php`, payload);
+                    if (res.data.status === "tracked") {
+                        localStorage.setItem('city_drive_last_tracked', today);
+                    }
+                } catch (err) {
+                    console.error("Analytics Error:", err);
+                }
+            };
+
+            // 4. Geolocation & Dispatch
             if ("geolocation" in navigator) {
                 navigator.geolocation.getCurrentPosition(
                     async (pos) => {
-                        const fullPayload = {
+                        sendData({
                             ...basePayload,
                             lat: pos.coords.latitude,
                             lng: pos.coords.longitude
-                        };
-                        sendData(fullPayload);
+                        });
                     },
-                    () => sendData(basePayload), // If user denies GPS
-                    { timeout: 10000 }
+                    () => sendData(basePayload), 
+                    { timeout: 5000 }
                 );
             } else {
                 sendData(basePayload);
             }
         };
 
-         const BASE_API = process.env.NEXT_PUBLIC_API_URL || "https://api.citydrivehire.com";
-
-        const sendData = async (payload) => {
-            try {
-                await axios.post(`${BASE_API}/reports/log_detailed_visit.php`, payload);
-            } catch (err) {
-                console.error("Analytics Error:", err);
-            }
-        };
-
         trackVisitor();
     }, []);
 
-    return null; // This component doesn't render anything UI-wise
+    return null;
 }

@@ -1,6 +1,7 @@
 'use client';
 
 import { FaBars, FaHandshake, FaExclamationTriangle, FaClock, FaTimesCircle } from 'react-icons/fa';
+import ChatDropdown from '@/components/ui/ChatDropdown';
 import Link from 'next/link';
 
 export default function PartnerHeader({ setIsOpen, kycStatus }) {
@@ -46,13 +47,15 @@ export default function PartnerHeader({ setIsOpen, kycStatus }) {
                     <FaHandshake className="text-green-600" /> 
                     <span className="hidden sm:inline">Partner Dashboard</span>
                 </span>
-                
-                <button
-                    onClick={() => setIsOpen(true)}
-                    className="lg:hidden p-2 text-gray-600 hover:bg-gray-100 rounded-lg"
-                >
-                    <FaBars size={24} />
-                </button>
+                <div className="flex items-center gap-4">
+                    <ChatDropdown unreadCount={2} />
+                    <button
+                        onClick={() => setIsOpen(true)}
+                        className="lg:hidden p-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+                    >
+                        <FaBars size={24} />
+                    </button>
+                </div>
             </div>
         </header>
     );
