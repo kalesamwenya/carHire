@@ -3,8 +3,10 @@ import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { 
     FaCar, FaHistory, FaCalendarAlt, FaSearch, 
-    FaCheckCircle, FaWallet, FaCogs, FaSpinner 
+    FaCheckCircle, FaWallet, FaCogs, FaSpinner,
+    FaLock
 } from 'react-icons/fa';
+import CityDriveLoader from '@/components/CityDriveLoader';
 
 export default function EmitCommandCenter() {
     const { data: session, status } = useSession();
@@ -12,7 +14,7 @@ export default function EmitCommandCenter() {
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
 
-     const BASE_API = process.env.NEXT_PUBLIC_API_URL || "https://api.citydrivehire.com";
+    const BASE_API = process.env.NEXT_PUBLIC_API_URL || "https://api.citydrivehire.com";
 
     // --- 1. Consolidated Fetch Function ---
     const fetchBookings = useCallback(async () => {
@@ -33,7 +35,7 @@ export default function EmitCommandCenter() {
         } finally {
             setLoading(false);
         }
-    }, [session?.user?.id]);
+    }, [session?.user?.id, BASE_API]);
 
     // --- 2. Single Effect for Auth & Initial Load ---
     useEffect(() => {
@@ -44,7 +46,7 @@ export default function EmitCommandCenter() {
         }
     }, [status, fetchBookings]);
 
-    // --- 3. Data Intelligence (Calculated from Triple-Join Data) ---
+    // --- 3. Data Intelligence ---
     const stats = useMemo(() => {
         const active = bookings.filter(b => 
             ['active', 'confirmed', 'upcoming'].includes(b.booking_status?.toLowerCase())
@@ -53,7 +55,6 @@ export default function EmitCommandCenter() {
         const completed = bookings.filter(b => b.booking_status?.toLowerCase() === 'completed');
         
         const totalSpent = bookings.reduce((acc, curr) => {
-            // Using amount_paid from the payments table join
             return acc + (Number(curr.amount_paid) || 0);
         }, 0);
         
@@ -71,18 +72,29 @@ export default function EmitCommandCenter() {
         .filter(b => b.car_name?.toLowerCase().includes(searchQuery.toLowerCase()))
         .slice(0, 10);
 
-    // --- 4. Render Logic ---
-    if (loading || status === 'loading') {
-        return (
-            <div className="flex flex-col items-center justify-center min-h-screen bg-[#F8F9FA]">
-                <FaSpinner className="animate-spin text-green-500 text-4xl mb-4" />
-                <p className="font-black text-gray-400 uppercase tracking-widest text-xs">Syncing Emit Photography Fleet...</p>
-            </div>
-        );
-    }
+    // --- 4. Role Authorization Logic ---
+    const userRole = session?.user?.role?.toLowerCase();
+    const isAuthorized = userRole === 'member';
+
+   if (loading) return <CityDriveLoader message="sycing fleet data"/>;
 
     if (status === 'unauthenticated') {
         return <div className="p-20 text-center font-black uppercase text-gray-400">Please sign in to view dashboard</div>;
+    }
+
+    // Block Admins and Partners
+    if (!isAuthorized) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-screen bg-[#F8F9FA] p-6 text-center">
+                <div className="w-20 h-20 bg-gray-100 rounded-3xl flex items-center justify-center text-gray-400 mb-6">
+                    <FaLock size={30} />
+                </div>
+                <h2 className="text-2xl font-black text-gray-900 tracking-tight mb-2">Restricted Access</h2>
+                <p className="text-gray-500 font-medium max-w-sm mx-auto">
+                    This portal is reserved for members only. Admin and Partner accounts must use their respective command centers.
+                </p>
+            </div>
+        );
     }
 
     return (

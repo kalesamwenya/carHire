@@ -102,7 +102,7 @@ export default function AdminSidebar({ isOpen, setIsOpen }) {
 
                 {/* BRAND LOGO */}
                 <div className="h-16 flex items-center justify-between px-6 border-b border-slate-800 bg-slate-950/50">
-                   <Link href="/ddmin" className="flex items-center gap-3 group">
+                   <Link href="/" className="flex items-center gap-3 group">
                     <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-105 transition-all bg-slate-900 text-green-500`}>
                         <FaCarSide className="text-xl" />
                     </div>
