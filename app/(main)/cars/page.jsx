@@ -3,7 +3,6 @@ import CarListClient from '../../../components/CarListClient';
 
 export default async function CarsPage() {
     // Local API Endpoint
-   
     const Public_Api = process.env.NEXT_PUBLIC_API_URL || "https://api.citydrivehire.com";
 
     try {
@@ -22,25 +21,24 @@ export default async function CarsPage() {
                 // Remove leading slash to prevent double slashes (//) in the URL
                 const cleanPath = car.image.replace(/^\//, '');
                 
-                // If your API serves the 'public' folder directly, use this:
+                // Construct the full URL using the API domain
                 fullImageUrl = `${Public_Api}/${cleanPath}`;
-                
-                // OR if you need to explicitly point to the public directory:
-                // fullImageUrl = `${Public_Api}/public/${cleanPath}`;
             }
 
             return {
                 ...car,
                 image: fullImageUrl,
-                // Ensure price is a number for the Client-side filters
-                price: parseFloat(car.price)
+                // Ensure numeric fields are correctly typed for Client-side filters
+                price: parseFloat(car.price),
+                min_booking_days: parseInt(car.min_booking_days) || 1,
+                seats: parseInt(car.seats) || 0
             };
         });
 
         return (
             <main className="mt-[6rem] mb-[4rem] px-4 md:px-8 lg:px-12 max-w-[1440px] mx-auto min-h-screen">
                 <header className="mb-10">
-                    <h1 className="text-4xl font-bold text-gray-900">Our Fleet</h1>
+                    <h1 className="text-4xl font-bold text-gray-900 tracking-tight">Our Fleet</h1>
                     <p className="text-gray-500 mt-2">Professional rentals for Every Occasion.</p>
                 </header>
 
@@ -54,6 +52,7 @@ export default async function CarsPage() {
             <div className="mt-20 px-4 max-w-[1440px] mx-auto text-center">
                 <h2 className="text-xl font-semibold">Unable to load fleet</h2>
                 <p className="text-gray-500">Please check your connection or try again later.</p>
+                {/* Passing an empty array prevents the client component from breaking */}
                 <CarListClient cars={[]} />
             </div>
         );

@@ -27,10 +27,16 @@ export default function Filters({ onChange, activeFilters }) {
                     onChange={(e) => handleFilterChange('type', e.target.value)}
                 >
                     <option value="">All Types</option>
-                    <option value="Sedan">Sedan</option>
-                    <option value="SUV">SUV</option>
-                    <option value="Luxury">Luxury</option>
-                    <option value="Pickup">Pickup</option>
+                     <option value="suv">SUV / 4x4</option>
+                                        <option value="sedan">Sedan</option>
+                                        <option value="hatchback">Hatchback</option>
+                                        <option value="luxury">Luxury / Executive</option>
+                                        <option value="bus">Bus / Van</option>
+                                        <option value="van">Cargo Van</option>
+                                        <option value="pickup">Pickup Truck</option>
+                                        <option value="convertible">Convertible</option>
+                                        <option value="compact">Compact / Small</option>
+                                        <option value="electric">Electric Vehicle</option>
                 </select>
             </div>
 

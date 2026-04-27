@@ -1,4 +1,5 @@
 'use client';
+
 export const dynamic = 'force-dynamic';
 import { useState, useMemo } from 'react';
 import { FaFilter, FaSadTear } from 'react-icons/fa';
@@ -33,7 +34,7 @@ export default function CarListClient({ cars = [] }) {
         setCompareIds(prev => prev.filter(x => x !== id));
     };
 
-    // Derived State
+    // Derived State for Comparison
     const selectedCars = useMemo(() => {
         return cars.filter(c => compareIds.includes(c.id));
     }, [cars, compareIds]);
@@ -46,18 +47,15 @@ export default function CarListClient({ cars = [] }) {
             if (filters.fuel && c.fuel !== filters.fuel) return false;
             if (filters.maxPrice && c.price > Number(filters.maxPrice)) return false;
             if (filters.availableOnly && !c.available) return false;
+            
+            // Optional: Filter by trip duration if provided in filters
+            if (filters.duration && c.min_booking_days > Number(filters.duration)) return false;
+            
             return true;
         });
     }, [cars, filters]);
 
     return (
-        /* UPDATED WRAPPER:
-           1. bg-gray-50: Forces light background (overrides any global black/dark theme).
-           2. min-h-screen: Ensures the color fills the whole mobile screen.
-           3. p-4: Adds padding on mobile so content isn't stuck to edges.
-           4. lg:p-0 / lg:bg-transparent: Resets on desktop if you want the parent layout to handle it,
-              or keep bg-gray-50 if you want consistency.
-        */
         <div className="relative w-full bg-gray-50 min-h-screen p-4 py-30 lg:p-0 lg:min-h-0 lg:bg-transparent text-gray-900">
 
             {/* Mobile Filter Toggle */}

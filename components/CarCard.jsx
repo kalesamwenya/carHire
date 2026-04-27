@@ -2,14 +2,14 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { FaGasPump, FaCogs, FaUsers, FaCheckCircle, FaChevronRight, FaPlus } from 'react-icons/fa';
+import { FaGasPump, FaCogs, FaUsers, FaCheckCircle, FaChevronRight, FaPlus, FaCalendarAlt } from 'react-icons/fa';
 
 export default function CarCard({ car, onCompare, isComparing }) {
     if (!car) return null;
 
-    // Use the image URL provided by the server component (which already prepends the API domain)
-    // Fallback to a local placeholder if nothing is found
+    // Use the image URL provided by the server component
     const thumbnail = car.image || '/placeholder-car.png';
+    const minDays = car.min_booking_days || 1;
 
     return (
         <article className="group relative bg-white rounded-[2.5rem] p-4 transition-all duration-500 hover:shadow-[0_22px_50px_-12px_rgba(0,0,0,0.05)] border border-transparent hover:border-gray-100">
@@ -24,6 +24,16 @@ export default function CarCard({ car, onCompare, isComparing }) {
                     sizes="(max-width: 768px) 100vw, 33vw"
                     priority={false}
                 />
+
+                {/* Min Days Badge - Top Left */}
+                {minDays > 1 && (
+                    <div className="absolute top-4 left-4 bg-black/60 backdrop-blur-md text-white px-3 py-1.5 rounded-xl flex items-center gap-2 z-20 border border-white/10">
+                        <FaCalendarAlt size={10} className="text-blue-400" />
+                        <span className="text-[9px] font-black uppercase tracking-widest">
+                            Min. {minDays} Days
+                        </span>
+                    </div>
+                )}
 
                 {/* Floating Compare Button */}
                 <button 
@@ -59,7 +69,9 @@ export default function CarCard({ car, onCompare, isComparing }) {
                     </div>
                     <div className="text-right">
                         <p className="text-sm font-black text-gray-900">ZMW {Number(car.price).toLocaleString()}</p>
-                        <p className="text-[10px] font-medium text-gray-400 uppercase tracking-tighter">per day</p>
+                        <p className="text-[10px] font-medium text-gray-400 uppercase tracking-tighter">
+                            per day {minDays > 1 && `(Min. ${minDays}d)`}
+                        </p>
                     </div>
                 </div>
 

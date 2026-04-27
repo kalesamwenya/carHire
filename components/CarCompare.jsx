@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { FaTimes, FaCheckCircle, FaMinusCircle, FaCarSide } from 'react-icons/fa';
+import { FaTimes, FaCheckCircle, FaMinusCircle, FaCarSide, FaCalendarAlt } from 'react-icons/fa';
 
 export default function CarCompare({ cars = [], onClose, onRemove }) {
     
@@ -11,7 +11,6 @@ export default function CarCompare({ cars = [], onClose, onRemove }) {
 
     return (
         <aside className="fixed inset-x-0 bottom-0 z-50 flex justify-center pointer-events-none p-4">
-            {/* Pointer events auto re-enables clicking inside the modal */}
             <div className="bg-white pointer-events-auto w-full max-w-5xl rounded-t-xl shadow-2xl border border-gray-200 flex flex-col max-h-[80vh] animate-slide-up">
                 
                 {/* Header */}
@@ -64,6 +63,18 @@ export default function CarCompare({ cars = [], onClose, onRemove }) {
                             </tr>
                         </thead>
                         <tbody className="text-sm text-gray-700 divide-y divide-gray-50">
+                            {/* Min Booking Days Row */}
+                            <tr>
+                                <td className="sticky left-0 bg-white p-4 font-semibold text-gray-900">Min. Booking</td>
+                                {cars.map(c => (
+                                    <td key={c.id} className="p-4 text-center">
+                                        <span className="flex items-center justify-center gap-2 font-bold text-blue-600">
+                                            <FaCalendarAlt size={12} />
+                                            {c.min_booking_days || 1} { (c.min_booking_days || 1) > 1 ? 'Days' : 'Day' }
+                                        </span>
+                                    </td>
+                                ))}
+                            </tr>
                             <tr>
                                 <td className="sticky left-0 bg-white p-4 font-semibold text-gray-900">Transmission</td>
                                 {cars.map(c => <td key={c.id} className="p-4 text-center">{c.transmission}</td>)}
@@ -74,7 +85,7 @@ export default function CarCompare({ cars = [], onClose, onRemove }) {
                             </tr>
                             <tr>
                                 <td className="sticky left-0 bg-white p-4 font-semibold text-gray-900">Category</td>
-                                {cars.map(c => <td key={c.id} className="p-4 text-center">{c.type}</td>)}
+                                {cars.map(c => <td key={c.id} className="p-4 text-center">{c.type || c.category}</td>)}
                             </tr>
                             <tr>
                                 <td className="sticky left-0 bg-white p-4 font-semibold text-gray-900">Status</td>
@@ -93,7 +104,7 @@ export default function CarCompare({ cars = [], onClose, onRemove }) {
                             <tr>
                                 <td className="sticky left-0 bg-white p-4"></td>
                                 {cars.map(c => (
-                                    <td key={c.id} className="p-4 inline-flex gap-4 items-center w-full">
+                                    <td key={c.id} className="p-4">
                                         <Link 
                                             href={`/booking?carId=${c.id}`}
                                             className={`block w-full text-center py-2.5 rounded-lg font-bold transition-all ${
@@ -102,14 +113,8 @@ export default function CarCompare({ cars = [], onClose, onRemove }) {
                                                 : 'bg-gray-100 text-gray-400 cursor-not-allowed'
                                             }`}
                                         >
-                                            {c.available ? 'Book Now' : 'Out of Stock'}
+                                            {c.available ? 'Book Now' : 'Unavailable'}
                                         </Link>
-                                        {/* <Link 
-    href={`/compare?ids=${cars.map(c => c.id).join(',')}`}
-    className="bg-green-600 text-white px-6 py-2.5 rounded-xl font-bold hover:bg-green-700 transition-colors"
->
-    Compare
-</Link> */}
                                     </td>
                                 ))}
                             </tr>
