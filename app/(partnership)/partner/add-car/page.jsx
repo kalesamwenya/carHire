@@ -23,7 +23,7 @@ export default function AddCarPage() {
         plate_number: '',
         category: 'suv',
         daily_rate: '',
-        min_days: 1, // Added default minimum days
+        min_days: 1,
         transmission: 'Automatic',
         fuel_type: 'Diesel',
         seats: 5,
@@ -100,26 +100,29 @@ export default function AddCarPage() {
         }
     };
 
+    // Shared styling for all text inputs to ensure black text
+    const inputStyle = "w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-green-500 outline-none text-black bg-white";
+
     return (
-        <div className="max-w-8xl mx-auto pb-10 px-4">
+        <div className="max-w-7xl mx-auto pb-10 px-4 mt-6">
             <Toaster position="top-center" />
 
             {/* Header */}
-            <div className="flex items-center justify-between gap-4 mb-8">
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-8">
                 <div className="flex items-center gap-4">
-                    <Link href="/admin/cars" className="p-2 bg-white border border-gray-200 rounded-lg text-gray-500 hover:text-slate-900 transition-colors">
+                    <Link href="/admin/cars" className="p-2.5 bg-white border border-gray-200 rounded-lg text-gray-500 hover:text-slate-900 transition-all shadow-sm">
                         <FaArrowLeft />
                     </Link>
                     <div>
                         <h1 className="text-2xl font-bold text-gray-800">Add New Vehicle</h1>
-                        <p className="text-sm text-gray-500">Fleet management for Emit Photography</p>
+                        <p className="text-sm text-gray-500 italic">Expand your photography and corporate fleet</p>
                     </div>
                 </div>
                 <button
                     type="button"
                     onClick={handleSubmit}
                     disabled={loading}
-                    className="px-6 py-2.5 bg-slate-900 text-white rounded-lg font-bold hover:bg-slate-800 shadow-md flex items-center gap-2 disabled:opacity-70 transition-all"
+                    className="w-full md:w-auto px-8 py-3 bg-slate-900 text-white rounded-lg font-bold hover:bg-slate-800 shadow-md flex items-center justify-center gap-2 disabled:opacity-70 transition-all active:scale-95"
                 >
                     {loading ? 'Processing...' : <><FaSave /> Save Vehicle</>}
                 </button>
@@ -134,30 +137,30 @@ export default function AddCarPage() {
                         </h2>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="md:col-span-2">
-                                <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Display Name</label>
-                                <input name="name" onChange={handleChange} required placeholder="Example: Luxury Toyota Hilux 2024" className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-green-500 outline-none" />
+                                <label className="block text-[10px] font-black text-gray-400 uppercase mb-2 tracking-widest">Display Name</label>
+                                <input name="name" onChange={handleChange} required placeholder="Example: Luxury Toyota Hilux 2024" className={inputStyle} />
                             </div>
                             <div>
-                                <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Make</label>
-                                <input name="make" onChange={handleChange} required placeholder="Toyota" className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-green-500 outline-none" />
+                                <label className="block text-[10px] font-black text-gray-400 uppercase mb-2 tracking-widest">Make</label>
+                                <input name="make" onChange={handleChange} required placeholder="Toyota" className={inputStyle} />
                             </div>
                             <div>
-                                <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Model</label>
-                                <input name="model" onChange={handleChange} required placeholder="Hilux" className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-green-500 outline-none" />
+                                <label className="block text-[10px] font-black text-gray-400 uppercase mb-2 tracking-widest">Model</label>
+                                <input name="model" onChange={handleChange} required placeholder="Hilux" className={inputStyle} />
                             </div>
                             <div>
-                                <label className="block text-xs font-bold text-gray-500 uppercase mb-2">License Plate</label>
-                                <input name="plate_number" onChange={handleChange} required placeholder="ABC 1234" className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-green-500 outline-none uppercase font-mono" />
+                                <label className="block text-[10px] font-black text-gray-400 uppercase mb-2 tracking-widest">License Plate</label>
+                                <input name="plate_number" onChange={handleChange} required placeholder="ABC 1234" className={`${inputStyle} uppercase font-mono`} />
                             </div>
                             <div>
-                                <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Category</label>
+                                <label className="block text-[10px] font-black text-gray-400 uppercase mb-2 tracking-widest">Category</label>
                                 <div className="relative">
                                     <FaTag className="absolute left-3 top-3.5 text-gray-400" />
                                     <select 
                                         name="category" 
                                         value={formData.category} 
                                         onChange={handleChange} 
-                                        className="w-full border border-gray-300 rounded-lg p-3 pl-10 text-sm bg-white focus:ring-2 focus:ring-green-500 outline-none"
+                                        className={`${inputStyle} pl-10 appearance-none`}
                                     >
                                         <option value="suv">SUV / 4x4</option>
                                         <option value="sedan">Sedan</option>
@@ -181,15 +184,15 @@ export default function AddCarPage() {
                         </h2>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                             <div>
-                                <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Transmission</label>
-                                <select name="transmission" onChange={handleChange} className="w-full border border-gray-300 rounded-lg p-3 text-sm bg-white outline-none">
+                                <label className="block text-[10px] font-black text-gray-400 uppercase mb-2 tracking-widest">Transmission</label>
+                                <select name="transmission" onChange={handleChange} className={`${inputStyle} appearance-none`}>
                                     <option value="Automatic">Automatic</option>
                                     <option value="Manual">Manual</option>
                                 </select>
                             </div>
                             <div>
-                                <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Fuel Type</label>
-                                <select name="fuel_type" onChange={handleChange} className="w-full border border-gray-300 rounded-lg p-3 text-sm bg-white outline-none">
+                                <label className="block text-[10px] font-black text-gray-400 uppercase mb-2 tracking-widest">Fuel Type</label>
+                                <select name="fuel_type" onChange={handleChange} className={`${inputStyle} appearance-none`}>
                                     <option value="Diesel">Diesel</option>
                                     <option value="Petrol">Petrol</option>
                                     <option value="Hybrid">Hybrid</option>
@@ -197,23 +200,23 @@ export default function AddCarPage() {
                                 </select>
                             </div>
                             <div>
-                                <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Mileage (km)</label>
+                                <label className="block text-[10px] font-black text-gray-400 uppercase mb-2 tracking-widest">Mileage (km)</label>
                                 <div className="relative">
                                     <FaRoad className="absolute left-3 top-3.5 text-gray-400" />
-                                    <input name="mileage" type="number" onChange={handleChange} placeholder="0" className="w-full border border-gray-300 rounded-lg p-3 pl-10 text-sm outline-none" />
+                                    <input name="mileage" type="number" onChange={handleChange} placeholder="0" className={`${inputStyle} pl-10`} />
                                 </div>
                             </div>
                             <div>
-                                <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Seats</label>
-                                <input name="seats" type="number" defaultValue="5" onChange={handleChange} className="w-full border border-gray-300 rounded-lg p-3 text-sm outline-none" />
+                                <label className="block text-[10px] font-black text-gray-400 uppercase mb-2 tracking-widest">Seats</label>
+                                <input name="seats" type="number" defaultValue="5" onChange={handleChange} className={inputStyle} />
                             </div>
                             <div>
-                                <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Color</label>
-                                <input name="color" onChange={handleChange} placeholder="White" className="w-full border border-gray-300 rounded-lg p-3 text-sm outline-none" />
+                                <label className="block text-[10px] font-black text-gray-400 uppercase mb-2 tracking-widest">Color</label>
+                                <input name="color" onChange={handleChange} placeholder="White" className={inputStyle} />
                             </div>
                             <div className="md:col-span-3">
-                                <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Description</label>
-                                <textarea name="description" onChange={handleChange} rows="4" className="w-full border border-gray-300 rounded-lg p-3 text-sm outline-none resize-none" placeholder="Enter vehicle features..."></textarea>
+                                <label className="block text-[10px] font-black text-gray-400 uppercase mb-2 tracking-widest">Description</label>
+                                <textarea name="description" onChange={handleChange} rows="4" className={`${inputStyle} resize-none`} placeholder="Enter vehicle features..."></textarea>
                             </div>
                         </div>
                     </div>
@@ -227,17 +230,17 @@ export default function AddCarPage() {
                         </h2>
                         <div className="space-y-4">
                             <div>
-                                <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Daily Rate ($)</label>
+                                <label className="block text-[10px] font-black text-gray-400 uppercase mb-2 tracking-widest">Daily Rate (KMW)</label>
                                 <div className="relative">
-                                    <span className="absolute left-3 top-3 text-gray-500 font-bold">$</span>
-                                    <input name="daily_rate" type="number" onChange={handleChange} required className="w-full border border-gray-300 rounded-lg p-3 pl-8 text-sm outline-none font-bold text-lg" />
+                                    <span className="absolute left-3 top-3 text-gray-800 font-bold">K</span>
+                                    <input name="daily_rate" type="number" onChange={handleChange} required className={`${inputStyle} pl-8 font-bold text-lg`} />
                                 </div>
                             </div>
                             <div>
-                                <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Min. Booking Days</label>
+                                <label className="block text-[10px] font-black text-gray-400 uppercase mb-2 tracking-widest">Min. Booking Days</label>
                                 <div className="relative">
                                     <FaCalendarDay className="absolute left-3 top-3.5 text-gray-400" />
-                                    <input name="min_days" type="number" min="1" defaultValue="1" onChange={handleChange} required className="w-full border border-gray-300 rounded-lg p-3 pl-10 text-sm outline-none font-bold" />
+                                    <input name="min_days" type="number" min="1" defaultValue="1" onChange={handleChange} required className={`${inputStyle} pl-10 font-bold`} />
                                 </div>
                             </div>
                         </div>
@@ -247,21 +250,21 @@ export default function AddCarPage() {
                         <h2 className="text-lg font-bold text-gray-800 mb-2 flex items-center gap-2">
                             <FaImage className="text-purple-600" /> Images
                         </h2>
-                        <p className="text-[10px] text-gray-400 mb-4 uppercase font-bold tracking-wider">Click a photo to set as cover</p>
+                        <p className="text-[9px] text-gray-400 mb-4 uppercase font-bold tracking-widest">Click a photo to set as cover</p>
 
-                        <label className="border-2 border-dashed border-gray-300 rounded-xl p-6 flex flex-col items-center justify-center text-gray-500 hover:bg-gray-50 transition-colors cursor-pointer bg-gray-50">
-                            <FaUpload className="text-xl mb-2 text-purple-600" />
-                            <span className="text-xs font-bold">Add Photos</span>
+                        <label className="border-2 border-dashed border-gray-200 rounded-xl p-8 flex flex-col items-center justify-center text-gray-500 hover:bg-gray-50 hover:border-purple-300 transition-all cursor-pointer bg-gray-50/50">
+                            <FaUpload className="text-2xl mb-2 text-purple-600" />
+                            <span className="text-xs font-bold text-gray-600">Upload Media</span>
                             <input type="file" multiple accept="image/*" onChange={handleFileChange} className="hidden" />
                         </label>
 
-                        <div className="grid grid-cols-3 gap-2 mt-4">
+                        <div className="grid grid-cols-3 gap-3 mt-6">
                             {previews.map((src, index) => (
                                 <div 
                                     key={index} 
                                     onClick={() => setSelectedCover(index)}
                                     className={`relative aspect-square rounded-lg overflow-hidden border-2 transition-all cursor-pointer group ${
-                                        selectedCover === index ? 'border-green-500 ring-2 ring-green-100' : 'border-gray-200'
+                                        selectedCover === index ? 'border-green-500 ring-4 ring-green-50' : 'border-gray-100'
                                     }`}
                                 >
                                     <img src={src} className="w-full h-full object-cover" alt="preview" />
@@ -270,16 +273,16 @@ export default function AddCarPage() {
                                             <FaStar size={8} /> Cover
                                         </div>
                                     )}
-                                    <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2">
+                                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                                         <button 
                                             type="button"
                                             onClick={(e) => {
                                                 e.stopPropagation();
                                                 removeImage(index);
                                             }}
-                                            className="bg-red-500 text-white p-2 rounded-full hover:bg-red-600 shadow-lg"
+                                            className="bg-red-500 text-white p-2 rounded-full hover:bg-red-600 shadow-xl transform scale-90 group-hover:scale-100 transition-transform"
                                         >
-                                            <FaTrash size={12} />
+                                            <FaTrash size={14} />
                                         </button>
                                     </div>
                                 </div>

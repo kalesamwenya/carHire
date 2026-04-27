@@ -13,6 +13,7 @@ import { useSession } from 'next-auth/react';
 
 // --- CONSTANTS ---
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "https://api.citydrivehire.com";
+const MIN_RENTAL_DAYS = 2;
 
 // --- UTILITY: Generate IDs ---
 const generateBookingIds = () => {
@@ -135,17 +136,19 @@ function BookingWizardContent() {
     }, [initialCarId]);
 
     const pricing = useMemo(() => {
-        if (!selectedCar || !form.from || !form.to) return { days: 0, total: 0, isValid: false };
+        if (!selectedCar || !form.from || !form.to) return { days: 0, total: 0, isValid: false, meetsMinimum: false };
         const start = new Date(form.from);
         const end = new Date(form.to);
         const diffTime = end - start;
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; // Inclusive of start/end
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; 
         const days = diffDays > 0 ? diffDays : 0; 
         const dailyRate = Number(selectedCar.price) || 0;
+        
         return { 
             days, 
             total: days * dailyRate,
-            isValid: diffDays > 0
+            isValid: diffDays > 0,
+            meetsMinimum: days >= MIN_RENTAL_DAYS
         };
     }, [selectedCar, form.from, form.to]);
 
@@ -162,7 +165,8 @@ function BookingWizardContent() {
         } else if (step === 3) {
             const { name, phone, license, from, to } = form;
             if (!name || !phone || !license || !from || !to) return toast.error('Please fill in all fields');
-            if (!pricing.isValid) return toast.error('Check your dates. Minimum rental is 1 day.');
+            if (!pricing.isValid) return toast.error('Check your dates. End date must be after start date.');
+            if (!pricing.meetsMinimum) return toast.error(`Minimum rental period is ${MIN_RENTAL_DAYS} days.`);
             setGeneratedIds(generateBookingIds());
             setStep(4);
         }
@@ -193,7 +197,6 @@ function BookingWizardContent() {
 
             if (!res.data?.success) throw new Error(res.data?.message || "Booking failed");
 
-            // Logic to generate receipt via helper
             await generateBookingReceipt({
                 tx_ref: generatedIds.refCode,
                 amount: pricing.total,
@@ -235,14 +238,14 @@ function BookingWizardContent() {
                             <div className="w-20 h-20 bg-amber-50 text-amber-500 rounded-full flex items-center justify-center mx-auto mb-6">
                                 <FaCalendarAlt className="text-3xl" />
                             </div>
-                            <h3 className="text-2xl font-bold text-gray-900 mb-3">Vehicle Booked</h3>
-                            <p className="text-gray-600 mb-8">
+                            <h3 className="text-2xl font-bold text-black mb-3">Vehicle Booked</h3>
+                            <p className="text-black mb-8">
                                 <span className="font-bold">{selectedCar?.name}</span> is currently unavailable. 
                                 Would you like to check the next available date or select another vehicle?
                             </p>
                             <div className="flex flex-col gap-3">
                                 <button onClick={() => setShowReserveModal(false)} className="w-full py-4 bg-green-600 text-white rounded-2xl font-bold">Inquire for Next Slot</button>
-                                <button onClick={() => {setShowReserveModal(false); setSelectedCar(null); setStep(1);}} className="w-full py-4 bg-gray-50 text-gray-500 rounded-2xl font-semibold">Choose Different Car</button>
+                                <button onClick={() => {setShowReserveModal(false); setSelectedCar(null); setStep(1);}} className="w-full py-4 bg-gray-50 text-black rounded-2xl font-semibold">Choose Different Car</button>
                             </div>
                         </div>
                     </div>
@@ -257,11 +260,11 @@ function BookingWizardContent() {
                 {/* Step 1: Vehicle Selection */}
                 {step === 1 && (
                     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-                        <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+                        <h2 className="text-2xl font-bold text-black mb-6 flex items-center gap-2">
                             <FaCar className="text-green-600" /> Choose Your Ride
                         </h2>
                         {loading ? (
-                            <div className="flex flex-col items-center justify-center py-20 text-gray-400">
+                            <div className="flex flex-col items-center justify-center py-20 text-black">
                                 <FaSpinner className="animate-spin text-4xl mb-3 text-green-600" />
                                 <p>Syncing fleet data...</p>
                             </div>
@@ -281,9 +284,9 @@ function BookingWizardContent() {
                                         <div className="h-28 bg-gray-100 rounded-lg mb-4 overflow-hidden relative">
                                             <img src={resolveImg(c)} alt={c.name} className="w-full h-full object-cover" onError={(e) => e.target.src = '/placeholder-car.png'} />
                                         </div>
-                                        <h3 className="font-bold text-gray-900 text-sm">{c.name}</h3>
+                                        <h3 className="font-bold text-black text-sm">{c.name}</h3>
                                         <div className="flex justify-between items-end mt-1">
-                                            <span className="text-[10px] text-gray-400 uppercase font-semibold">{c.type}</span>
+                                            <span className="text-[10px] text-black uppercase font-semibold">{c.type}</span>
                                             <span className="text-green-700 font-bold text-sm">ZMW {Number(c.price).toLocaleString()}</span>
                                         </div>
                                     </div>
@@ -296,7 +299,7 @@ function BookingWizardContent() {
                 {/* Step 2: Specs */}
                 {step === 2 && selectedCar && (
                     <div className="animate-in fade-in slide-in-from-right-4 duration-500">
-                        <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+                        <h2 className="text-2xl font-bold text-black mb-6 flex items-center gap-2">
                             <FaInfoCircle className="text-blue-600" /> Vehicle Specifications
                         </h2>
                         <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100 md:flex">
@@ -304,16 +307,16 @@ function BookingWizardContent() {
                                 <img src={resolveImg(selectedCar)} alt={selectedCar.name} className="w-full h-full object-cover" />
                             </div>
                             <div className="md:w-1/2 p-6">
-                                <h2 className="text-2xl font-bold text-gray-900">{selectedCar.name}</h2>
+                                <h2 className="text-2xl font-bold text-black">{selectedCar.name}</h2>
                                 <p className="text-blue-600 font-bold text-xl mb-4">ZMW {Number(selectedCar.price).toLocaleString()}/day</p>
                                 <div className="grid grid-cols-2 gap-4 mb-6">
-                                    <div className="text-gray-600 text-sm">⚙️ {selectedCar.transmission || 'Manual'}</div>
-                                    <div className="text-gray-600 text-sm">⛽ {selectedCar.fuel || 'Petrol'}</div>
-                                    <div className="text-gray-600 text-sm">👥 {selectedCar.seats || 5} Seats</div>
-                                    <div className="text-gray-600 text-sm">🎨 {selectedCar.color || 'Standard'}</div>
+                                    <div className="text-black text-sm">⚙️ {selectedCar.transmission || 'Manual'}</div>
+                                    <div className="text-black text-sm">⛽ {selectedCar.fuel || 'Petrol'}</div>
+                                    <div className="text-black text-sm">👥 {selectedCar.seats || 5} Seats</div>
+                                    <div className="text-black text-sm">🎨 {selectedCar.color || 'Standard'}</div>
                                 </div>
                                 <button onClick={handleNext} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition shadow-lg">Confirm & Continue</button>
-                                <button onClick={() => setStep(1)} className="w-full mt-4 text-gray-400 text-sm hover:text-red-500 transition-colors flex items-center justify-center gap-2">
+                                <button onClick={() => setStep(1)} className="w-full mt-4 text-black text-sm hover:text-red-500 transition-colors flex items-center justify-center gap-2">
                                     <FaChevronLeft size={10} /> Pick another car
                                 </button>
                             </div>
@@ -324,23 +327,27 @@ function BookingWizardContent() {
                 {/* Step 3: Details */}
                 {step === 3 && (
                     <div className="max-w-2xl mx-auto animate-in fade-in slide-in-from-right-4 duration-500">
-                        <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+                        <h2 className="text-2xl font-bold text-black mb-6 flex items-center gap-2">
                             <FaIdCard className="text-green-600" /> Rental Details
                         </h2>
                         <div className="space-y-5">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <input value={form.name} onChange={e => setForm({...form, name: e.target.value})} className="w-full p-3 border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-green-500" placeholder="Full Name" />
-                                <input value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} className="w-full p-3 border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-green-500" placeholder="Phone Number" />
-                                <input value={form.license} onChange={e => setForm({...form, license: e.target.value})} className="w-full md:col-span-2 p-3 border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-green-500" placeholder="License / ID Number" />
+                                <input value={form.name} onChange={e => setForm({...form, name: e.target.value})} className="w-full p-3 border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-green-500 text-black font-medium" placeholder="Full Name" />
+                                <input value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} className="w-full p-3 border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-green-500 text-black font-medium" placeholder="Phone Number" />
+                                <input value={form.license} onChange={e => setForm({...form, license: e.target.value})} className="w-full md:col-span-2 p-3 border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-green-500 text-black font-medium" placeholder="License / ID Number" />
+                            </div>
+                            <div className="bg-blue-50 p-3 rounded-lg flex items-center gap-3 mb-2">
+                                <FaInfoCircle className="text-blue-600" />
+                                <p className="text-xs text-black font-bold uppercase">Note: Minimum hire duration is {MIN_RENTAL_DAYS} days</p>
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="flex flex-col gap-1">
-                                    <label className="text-[10px] font-bold text-gray-400 uppercase">Pickup Date</label>
-                                    <input type="date" min={todayStr} value={form.from} onChange={e => setForm({...form, from: e.target.value})} className="p-3 border border-gray-200 rounded-lg" />
+                                    <label className="text-[10px] font-bold text-black uppercase">Pickup Date</label>
+                                    <input type="date" min={todayStr} value={form.from} onChange={e => setForm({...form, from: e.target.value})} className="p-3 border border-gray-200 rounded-lg text-black font-medium" />
                                 </div>
                                 <div className="flex flex-col gap-1">
-                                    <label className="text-[10px] font-bold text-gray-400 uppercase">Drop-off Date</label>
-                                    <input type="date" min={form.from || todayStr} value={form.to} onChange={e => setForm({...form, to: e.target.value})} className="p-3 border border-gray-200 rounded-lg" />
+                                    <label className="text-[10px] font-bold text-black uppercase">Drop-off Date</label>
+                                    <input type="date" min={form.from || todayStr} value={form.to} onChange={e => setForm({...form, to: e.target.value})} className="p-3 border border-gray-200 rounded-lg text-black font-medium" />
                                 </div>
                             </div>
                         </div>
@@ -351,35 +358,35 @@ function BookingWizardContent() {
                 {step === 4 && (
                     <div className="animate-in fade-in slide-in-from-right-4 duration-500 max-w-3xl mx-auto">
                         <div className="text-center mb-8">
-                            <h2 className="text-3xl font-black text-gray-900">Checkout</h2>
-                            <p className="text-gray-400 font-medium tracking-tight">Booking Ref: {generatedIds.bookingId}</p>
+                            <h2 className="text-3xl font-black text-black">Checkout</h2>
+                            <p className="text-black font-medium tracking-tight">Booking Ref: {generatedIds.bookingId}</p>
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-5 gap-8">
                             <div className="md:col-span-2 space-y-4">
                                 <div className="bg-gray-50 p-6 rounded-[2rem] border border-gray-100">
-                                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">Trip Summary</p>
+                                    <p className="text-[10px] font-black text-black uppercase tracking-widest mb-4">Trip Summary</p>
                                     <div className="space-y-4">
                                         <div className="flex justify-between items-center bg-white p-3 rounded-xl border border-gray-200">
-                                            <span className="text-xs font-bold text-gray-700">{pricing.days} Days</span>
+                                            <span className="text-xs font-bold text-black">{pricing.days} Days</span>
                                             <div className="flex gap-2">
                                                 <button onClick={() => {
                                                     const d = new Date(form.to); d.setDate(d.getDate() - 1);
                                                     if (d >= new Date(form.from)) setForm({...form, to: d.toISOString().split('T')[0]});
-                                                }} className="w-6 h-6 flex items-center justify-center bg-gray-100 rounded-md">-</button>
+                                                }} className="w-6 h-6 flex items-center justify-center bg-gray-100 rounded-md text-black">-</button>
                                                 <button onClick={() => {
                                                     const d = new Date(form.to); d.setDate(d.getDate() + 1);
                                                     setForm({...form, to: d.toISOString().split('T')[0]});
-                                                }} className="w-6 h-6 flex items-center justify-center bg-gray-100 rounded-md">+</button>
+                                                }} className="w-6 h-6 flex items-center justify-center bg-gray-100 rounded-md text-black">+</button>
                                             </div>
                                         </div>
                                         <div className="pt-4 border-t border-gray-200">
                                             <div className="flex justify-between text-xs mb-2">
-                                                <span className="text-gray-400">Rate</span>
-                                                <span className="font-bold">K{Number(selectedCar?.price).toLocaleString()}</span>
+                                                <span className="text-black">Rate</span>
+                                                <span className="font-bold text-black">K{Number(selectedCar?.price).toLocaleString()}</span>
                                             </div>
                                             <div className="flex justify-between text-sm">
-                                                <span className="font-black">Total Due</span>
+                                                <span className="font-black text-black">Total Due</span>
                                                 <span className="font-black text-green-600 text-lg">K{pricing.total.toLocaleString()}</span>
                                             </div>
                                         </div>
@@ -391,28 +398,28 @@ function BookingWizardContent() {
                                 <div className="flex gap-3 mb-8">
                                     <button onClick={() => setPaymentMethod('momo')} className={`flex-1 py-4 rounded-2xl border-2 flex flex-col items-center gap-2 ${paymentMethod === 'momo' ? 'border-green-600 bg-green-50' : 'border-gray-50'}`}>
                                         <div className={`w-8 h-8 rounded-full flex items-center justify-center ${paymentMethod === 'momo' ? 'bg-green-600 text-white' : 'bg-gray-200'}`}><FaPhone size={12} /></div>
-                                        <span className="text-[10px] font-black uppercase">Airtel/MTN</span>
+                                        <span className="text-[10px] font-black uppercase text-black">Airtel/MTN</span>
                                     </button>
                                     <button onClick={() => setPaymentMethod('card')} className={`flex-1 py-4 rounded-2xl border-2 flex flex-col items-center gap-2 ${paymentMethod === 'card' ? 'border-blue-600 bg-blue-50' : 'border-gray-50'}`}>
                                         <div className={`w-8 h-8 rounded-full flex items-center justify-center ${paymentMethod === 'card' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}><FaIdCard size={12} /></div>
-                                        <span className="text-[10px] font-black uppercase">Visa/Master</span>
+                                        <span className="text-[10px] font-black uppercase text-black">Visa/Master</span>
                                     </button>
                                 </div>
 
                                 {paymentMethod === 'momo' ? (
                                     <div className="animate-in slide-in-from-top-2">
-                                        <label className="text-[10px] font-black text-gray-400 uppercase">Payment Phone</label>
+                                        <label className="text-[10px] font-black text-black uppercase">Payment Phone</label>
                                         <div className="relative mt-1">
-                                            <FaHashtag className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" />
-                                            <input type="text" placeholder="097..." className="w-full pl-10 pr-4 py-4 bg-gray-50 rounded-2xl text-sm font-bold outline-none ring-green-500 focus:ring-1" value={paymentForm.phone || form.phone} onChange={(e) => setPaymentForm({...paymentForm, phone: e.target.value})} />
+                                            <FaHashtag className="absolute left-4 top-1/2 -translate-y-1/2 text-black" />
+                                            <input type="text" placeholder="097..." className="w-full pl-10 pr-4 py-4 bg-gray-50 rounded-2xl text-sm font-bold text-black outline-none ring-green-500 focus:ring-1" value={paymentForm.phone || form.phone} onChange={(e) => setPaymentForm({...paymentForm, phone: e.target.value})} />
                                         </div>
                                     </div>
                                 ) : (
                                     <div className="space-y-4 animate-in slide-in-from-top-2">
-                                        <input type="text" placeholder="Card Number" className="w-full p-4 bg-gray-50 rounded-2xl text-sm font-bold outline-none" />
+                                        <input type="text" placeholder="Card Number" className="w-full p-4 bg-gray-50 rounded-2xl text-sm font-bold text-black outline-none" />
                                         <div className="flex gap-4">
-                                            <input type="text" placeholder="MM/YY" className="w-1/2 p-4 bg-gray-50 rounded-2xl text-sm font-bold outline-none" />
-                                            <input type="text" placeholder="CVC" className="w-1/2 p-4 bg-gray-50 rounded-2xl text-sm font-bold outline-none" />
+                                            <input type="text" placeholder="MM/YY" className="w-1/2 p-4 bg-gray-50 rounded-2xl text-sm font-bold text-black outline-none" />
+                                            <input type="text" placeholder="CVC" className="w-1/2 p-4 bg-gray-50 rounded-2xl text-sm font-bold text-black outline-none" />
                                         </div>
                                     </div>
                                 )}
@@ -420,7 +427,7 @@ function BookingWizardContent() {
                                 <button onClick={submitBooking} disabled={isSubmitting} className={`w-full mt-10 py-5 rounded-2xl font-black text-xs uppercase tracking-widest text-white shadow-xl flex items-center justify-center gap-3 transition-all ${paymentMethod === 'momo' ? 'bg-green-600 hover:bg-green-700' : 'bg-blue-600 hover:bg-blue-700'}`}>
                                     {isSubmitting ? <FaSpinner className="animate-spin" /> : <><FaCheckCircle /> Authorize K{pricing.total.toLocaleString()}</>}
                                 </button>
-                                <p className="text-center text-[9px] text-gray-300 mt-6 font-bold uppercase tracking-tighter">Verified by Emit Security Systems</p>
+                                <p className="text-center text-[9px] text-black mt-6 font-bold uppercase tracking-tighter">Verified by Emit Security Systems</p>
                             </div>
                         </div>
                     </div>
@@ -432,22 +439,22 @@ function BookingWizardContent() {
                         <div className="w-24 h-24 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6">
                             <FaCheckCircle className="text-5xl" />
                         </div>
-                        <h2 className="text-3xl font-black text-gray-900 mb-2">Reservation Secured</h2>
-                        <p className="text-gray-500 mb-8">Payment of ZMW {bookingResult?.total_paid?.toLocaleString()} was authorized. Check your email for details.</p>
+                        <h2 className="text-3xl font-black text-black mb-2">Reservation Secured</h2>
+                        <p className="text-black mb-8 font-medium">Payment of ZMW {bookingResult?.total_paid?.toLocaleString()} was authorized. Check your email for details.</p>
 
                         <div className="bg-gray-50 border border-dashed border-gray-200 rounded-2xl p-6 mb-8 text-left">
                             <div className="flex justify-between mb-4">
-                                <span className="text-[10px] font-black uppercase text-gray-400">Reference</span>
-                                <span className="text-xs font-bold font-mono">{bookingResult?.booking_id}</span>
+                                <span className="text-[10px] font-black uppercase text-black">Reference</span>
+                                <span className="text-xs font-bold font-mono text-black">{bookingResult?.booking_id}</span>
                             </div>
-                            <button onClick={() => window.print()} className="w-full py-3 bg-white border border-gray-200 text-gray-700 rounded-xl font-bold text-xs uppercase flex items-center justify-center gap-2">
-                                <FaIdCard className="text-gray-400" /> Print Receipt PDF
+                            <button onClick={() => window.print()} className="w-full py-3 bg-white border border-gray-200 text-black rounded-xl font-bold text-xs uppercase flex items-center justify-center gap-2">
+                                <FaIdCard className="text-black" /> Print Receipt PDF
                             </button>
                         </div>
 
                         <div className="flex flex-col gap-3">
                             <button onClick={() => router.push('/dashboard')} className="w-full py-4 bg-green-600 text-white rounded-2xl font-black text-xs uppercase shadow-lg">Manage My Trips</button>
-                            <button onClick={() => router.push('/')} className="text-gray-400 text-xs font-bold uppercase">Return to Homepage</button>
+                            <button onClick={() => router.push('/')} className="text-black text-xs font-bold uppercase">Return to Homepage</button>
                         </div>
                     </div>
                 )}
@@ -458,7 +465,7 @@ function BookingWizardContent() {
                         <button 
                             onClick={() => setStep(step - 1)} 
                             disabled={step === 1 || isSubmitting}
-                            className="flex items-center gap-2 px-5 py-2 font-bold text-sm text-gray-400 disabled:opacity-20"
+                            className="flex items-center gap-2 px-5 py-2 font-bold text-sm text-black disabled:opacity-20"
                         >
                             <FaChevronLeft size={10} /> Back
                         </button>

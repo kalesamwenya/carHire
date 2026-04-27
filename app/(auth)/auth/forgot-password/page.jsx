@@ -12,7 +12,7 @@ export default function ForgotPasswordPage() {
     const [busy, setBusy] = useState(false);
     const [mounted, setMounted] = useState(false);
 
-    const BASE_API = process.env.NEXT_PUBLIC_API_URL || "https://api.citydrivehire.com";;
+    const BASE_API = process.env.NEXT_PUBLIC_API_URL || "https://api.citydrivehire.com";
 
     useEffect(() => { setMounted(true); }, []);
 
@@ -57,8 +57,8 @@ export default function ForgotPasswordPage() {
             </div>
 
             <div className="w-full lg:w-1/2 flex flex-col justify-center items-center p-6 lg:p-12 relative">
-                <Link href="/auth/signin" className="absolute top-8 left-8 flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-green-700 group">
-                    <div className="w-8 h-8 rounded-full bg-white border border-gray-200 flex items-center justify-center">
+                <Link href="/auth/signin" className="absolute top-8 left-8 flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-green-700 group transition-colors">
+                    <div className="w-8 h-8 rounded-full bg-white border border-gray-200 flex items-center justify-center shadow-sm group-hover:border-green-300">
                         <FaArrowLeft className="text-xs group-hover:-translate-x-0.5 transition-transform" />
                     </div>
                     <span>Back to Sign In</span>
@@ -68,18 +68,22 @@ export default function ForgotPasswordPage() {
                     <AuthShell title="Forgot Password" subtitle="No worries, it happens to the best of us.">
                         <form onSubmit={onSubmit} className="space-y-6 mt-8">
                             <div className="space-y-1.5">
-                                <label className="text-sm font-medium text-gray-900">Email Address</label>
+                                <label className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1">Email Address</label>
                                 <input
                                     type="email"
                                     required
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
-                                    className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-green-600 focus:ring-green-50 outline-none focus:ring-4 transition-all"
+                                    className="w-full px-4 py-3.5 rounded-xl border border-gray-200 focus:border-green-500 focus:ring-4 focus:ring-green-500/10 outline-none transition-all text-black text-sm"
                                     placeholder="name@example.com"
                                 />
                             </div>
 
-                            <button type="submit" disabled={busy} className="w-full py-3.5 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium flex items-center justify-center gap-2 transition-all">
+                            <button 
+                                type="submit" 
+                                disabled={busy} 
+                                className="w-full py-3.5 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium flex items-center justify-center gap-2 shadow-md active:scale-[0.98] transition-all disabled:opacity-70 disabled:cursor-not-allowed"
+                            >
                                 {busy ? "Sending..." : <><FaPaperPlane className="text-xs" /> Send Reset Link</>}
                             </button>
                         </form>

@@ -70,29 +70,23 @@ export default function SignUpPage() {
             email: form.email.trim().toLowerCase(),
             password: form.password,
             role: form.role,
-            // Consistency: Sending residency for both, but defaulting to 'Corporate' for partners
             residency: form.role === 'customer' ? form.residency : 'Corporate' 
         }, {
             headers: { 'Content-Type': 'application/json' }
         });
 
-        // 1. Success Feedback
         toast.success("Welcome! Check your email to verify and login.", {
             duration: 6000,
             icon: '✉️',
         });
 
-        // 2. Clear local form/message
         setMessage("");
 
-        // 3. Redirect to a 'Check Email' notice or Sign In page
-        // We wait slightly longer (2.5s) so they can read the toast message
         setTimeout(() => {
             router.push('/auth/signin?message=please_verify');
         }, 2500);
 
     } catch (err) {
-        // Handle the specific error message from your PHP (like "Email already registered")
         const errorText = err.response?.data?.message || "Something went wrong. Please try again.";
         setMessage(errorText);
         toast.error(errorText);
@@ -170,10 +164,9 @@ export default function SignUpPage() {
                                 </button>
                             </div>
 
-                            <AuthInput label="Full Name" value={form.name} onChange={(e) => setField("name", e.target.value)} placeholder="John Doe" icon={FaUser} error={errors.name} />
-                            <AuthInput label="Email" type="email" value={form.email} onChange={(e) => setField("email", e.target.value)} placeholder="name@example.com" icon={FaEnvelope} error={errors.email} />
+                            <AuthInput className="text-black" label="Full Name" value={form.name} onChange={(e) => setField("name", e.target.value)} placeholder="John Doe" icon={FaUser} error={errors.name} />
+                            <AuthInput className="text-black" label="Email" type="email" value={form.email} onChange={(e) => setField("email", e.target.value)} placeholder="name@example.com" icon={FaEnvelope} error={errors.email} />
                             
-                            {/* CONDITIONAL RESIDENCY: Only shows for Customers */}
                             {form.role === 'customer' && (
                                 <div className="space-y-1.5 animate-in fade-in slide-in-from-top-2 duration-300">
                                     <label className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1">Residency Status</label>
@@ -184,7 +177,7 @@ export default function SignUpPage() {
                                         <select 
                                             value={form.residency} 
                                             onChange={(e) => setField("residency", e.target.value)}
-                                            className="w-full pl-11 pr-4 py-3.5 bg-white border border-gray-200 rounded-xl outline-none focus:border-green-500 focus:ring-4 focus:ring-green-500/10 transition-all text-sm appearance-none"
+                                            className="w-full pl-11 pr-4 py-3.5 bg-white border border-gray-200 rounded-xl outline-none focus:border-green-500 focus:ring-4 focus:ring-green-500/10 transition-all text-sm text-black appearance-none"
                                         >
                                             <option value="Local">Local Resident</option>
                                             <option value="International">International Tourist</option>
@@ -194,11 +187,13 @@ export default function SignUpPage() {
                                 </div>
                             )}
 
-                            <AuthInput label="Password" type={show ? "text" : "password"} value={form.password} onChange={(e) => setField("password", e.target.value)} placeholder="••••••••" icon={FaLock} error={errors.password} />
-                            <AuthInput label="Confirm Password" type={show ? "text" : "password"} value={form.confirmPassword} onChange={(e) => setField("confirmPassword", e.target.value)} placeholder="••••••••" icon={FaLock} error={errors.confirmPassword} />
+                            <AuthInput className="text-black" label="Password" type={show ? "text" : "password"} value={form.password} onChange={(e) => setField("password", e.target.value)} placeholder="••••••••" icon={FaLock} error={errors.password} />
+                            <AuthInput className="text-black" label="Confirm Password" type={show ? "text" : "password"} value={form.confirmPassword} onChange={(e) => setField("confirmPassword", e.target.value)} placeholder="••••••••" icon={FaLock} error={errors.confirmPassword} />
 
                             <div className="flex justify-end">
-                                <button type="button" onClick={() => setShow(!show)} className="text-xs text-gray-500 hover:text-green-700 font-medium">{show ? "Hide Passwords" : "Show Passwords"}</button>
+                                <button type="button" onClick={() => setShow(!show)} className="text-xs text-black hover:text-green-700 font-medium transition-colors">
+                                    {show ? "Hide Passwords" : "Show Passwords"}
+                                </button>
                             </div>
 
                             {message && <div className="p-4 bg-red-50 border border-red-100 rounded-lg text-sm text-red-600 text-center animate-pulse">{message}</div>}

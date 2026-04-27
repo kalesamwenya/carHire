@@ -29,34 +29,31 @@ function VerifyContent() {
 
         const BASE_API = process.env.NEXT_PUBLIC_API_URL || "https://api.citydrivehire.com";
 
-       // Inside VerifyContent useEffect
-const verifyAccount = async () => {
-    try {
-        const response = await axios.get(`${BASE_API}/users/verify.php`, {
-            params: { token, email },
-            headers: {
-                'Accept': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest'
+        const verifyAccount = async () => {
+            try {
+                const response = await axios.get(`${BASE_API}/users/verify.php`, {
+                    params: { token, email },
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+
+                setStatus("success");
+                setMessage(response.data.message || "Account verified successfully!");
+                toast.success("Verification complete!");
+
+                setTimeout(() => {
+                    router.push(`/auth/signin?verified=true&email=${encodeURIComponent(email)}`);
+                }, 3000);
+
+            } catch (err) {
+                setStatus("error");
+                const errorMsg = err.response?.data?.message || "Link expired or invalid.";
+                setMessage(errorMsg);
+                toast.error(errorMsg);
             }
-        });
-
-        // PHP now returns 200 JSON
-        setStatus("success");
-        setMessage(response.data.message || "Account verified successfully!");
-        toast.success("Verification complete!");
-
-        setTimeout(() => {
-            router.push(`/auth/signin?verified=true&email=${encodeURIComponent(email)}`);
-        }, 3000);
-
-    } catch (err) {
-        setStatus("error");
-        // Catch the JSON error message from PHP
-        const errorMsg = err.response?.data?.message || "Link expired or invalid.";
-        setMessage(errorMsg);
-        toast.error(errorMsg);
-    }
-};
+        };
 
         verifyAccount();
     }, [searchParams, router]);
@@ -90,12 +87,10 @@ const verifyAccount = async () => {
         <div className="min-h-screen bg-gray-50 flex overflow-hidden relative">
             <Toaster position="top-center" />
             
-            {/* Left Side Branding (Hidden on mobile for this specific page) */}
             <div className="hidden lg:flex w-1/2 bg-gray-50 flex-col justify-center items-center px-12 border-r border-gray-100 relative">
                 <BrandingContent />
             </div>
 
-            {/* Right Side Interaction */}
             <div className="w-full lg:w-1/2 flex flex-col justify-center items-center p-6 lg:p-12 relative">
                 <Link href="/" className="absolute top-8 left-8 flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-green-700 transition-colors group">
                     <div className="w-8 h-8 rounded-full bg-white border border-gray-200 flex items-center justify-center shadow-sm">
@@ -111,17 +106,17 @@ const verifyAccount = async () => {
                             {status === "loading" && (
                                 <div className="space-y-4 animate-in fade-in duration-500">
                                     <FaSpinner className="text-5xl text-green-600 animate-spin mx-auto" />
-                                    <p className="text-gray-600 font-medium">{message}</p>
+                                    <p className="text-black font-medium">{message}</p>
                                 </div>
                             )}
 
                             {status === "success" && (
                                 <div className="space-y-4 animate-in zoom-in duration-500">
                                     <FaCheckCircle className="text-6xl text-green-600 mx-auto" />
-                                    <h3 className="text-xl font-bold text-slate-900">Email Verified!</h3>
-                                    <p className="text-gray-600">{message}</p>
-                                    <p className="text-sm text-gray-400 italic pt-4">Redirecting you to sign in...</p>
-                                    <Link href="/auth/signin" className="block w-full py-3 bg-green-600 text-white rounded-lg font-medium mt-6">
+                                    <h3 className="text-xl font-bold text-black">Email Verified!</h3>
+                                    <p className="text-black">{message}</p>
+                                    <p className="text-sm text-gray-500 italic pt-4">Redirecting you to sign in...</p>
+                                    <Link href="/auth/signin" className="block w-full py-3 bg-green-600 text-white rounded-lg font-medium mt-6 shadow-md hover:bg-green-700 transition-all">
                                         Sign In Now
                                     </Link>
                                 </div>
@@ -130,9 +125,9 @@ const verifyAccount = async () => {
                             {status === "error" && (
                                 <div className="space-y-4 animate-in shake duration-500">
                                     <FaExclamationTriangle className="text-6xl text-red-500 mx-auto" />
-                                    <h3 className="text-xl font-bold text-slate-900">Verification Failed</h3>
-                                    <p className="text-red-600 bg-red-50 p-3 rounded-lg text-sm">{message}</p>
-                                    <Link href="/auth/signup" className="block w-full py-3 border border-gray-200 text-gray-700 rounded-lg font-medium mt-6 hover:bg-gray-50 transition-all">
+                                    <h3 className="text-xl font-bold text-black">Verification Failed</h3>
+                                    <p className="text-red-700 bg-red-50 p-3 rounded-lg text-sm border border-red-100">{message}</p>
+                                    <Link href="/auth/signup" className="block w-full py-3 border border-gray-200 text-black rounded-lg font-medium mt-6 hover:bg-gray-50 transition-all shadow-sm">
                                         Try Registering Again
                                     </Link>
                                 </div>
@@ -146,7 +141,6 @@ const verifyAccount = async () => {
     );
 }
 
-// Wrapping in Suspense because of useSearchParams
 export default function VerifyPage() {
     return (
         <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-gray-50"><FaSpinner className="animate-spin text-green-600 text-3xl" /></div>}>

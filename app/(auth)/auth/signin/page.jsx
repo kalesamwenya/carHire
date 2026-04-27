@@ -150,7 +150,7 @@ function LoginContent() {
                                     type="email"
                                     value={form.email}
                                     onChange={(e) => setField("email", e.target.value)}
-                                    className={`w-full px-4 py-3 rounded-lg border ${errors.email ? 'border-red-300 focus:ring-red-200' : 'border-gray-200 focus:border-green-600 focus:ring-green-50'} bg-white text-sm outline-none focus:ring-4 transition-all duration-200 shadow-sm`}
+                                    className={`w-full px-4 py-3 rounded-lg border ${errors.email ? 'border-red-300 focus:ring-red-200' : 'border-gray-200 focus:border-green-600 focus:ring-green-50'} bg-white text-black text-sm outline-none focus:ring-4 transition-all duration-200 shadow-sm`}
                                     placeholder="name@example.com"
                                 />
                                 {errors.email && <p className="text-xs text-red-600">{errors.email}</p>}
@@ -168,13 +168,13 @@ function LoginContent() {
                                         type={show ? "text" : "password"}
                                         value={form.password}
                                         onChange={(e) => setField("password", e.target.value)}
-                                        className={`w-full px-4 py-3 rounded-lg border ${errors.password ? 'border-red-300 focus:ring-red-200' : 'border-gray-200 focus:border-green-600 focus:ring-green-50'} bg-white text-sm outline-none focus:ring-4 transition-all duration-200 shadow-sm pr-12`}
+                                        className={`w-full px-4 py-3 rounded-lg border ${errors.password ? 'border-red-300 focus:ring-red-200' : 'border-gray-200 focus:border-green-600 focus:ring-green-50'} bg-white text-black text-sm outline-none focus:ring-4 transition-all duration-200 shadow-sm pr-12`}
                                         placeholder="••••••••"
                                     />
                                     <button
                                         type="button"
                                         onClick={() => setShow((s) => !s)}
-                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-gray-400 hover:text-green-700 uppercase tracking-wider"
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-black text-black hover:text-green-700 uppercase tracking-widest"
                                     >
                                         {show ? "Hide" : "Show"}
                                     </button>
