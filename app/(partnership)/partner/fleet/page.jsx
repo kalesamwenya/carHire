@@ -6,13 +6,16 @@ import { useSession } from 'next-auth/react';
 import { 
     FaPlus, FaSearch, FaEdit, FaTrash, FaCircle, 
     FaCar, FaRoad, FaMoneyBillWave, FaFilter, 
-    FaSortAmountDown, FaChevronLeft, FaChevronRight 
+    FaSortAmountDown, FaChevronLeft, FaChevronRight,
+    FaExclamationTriangle
 } from 'react-icons/fa';
 
 export default function PartnerFleetPage() {
-    const { data: session } = useSession();
+    // 1. Monitor both the session data and the loading status
+    const { data: session, status } = useSession();
     const [fleet, setFleet] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState(null);
     
     // UI State
     const [searchQuery, setSearchQuery] = useState('');
@@ -21,30 +24,48 @@ export default function PartnerFleetPage() {
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 6;
 
-    const Public_Api = process.env.NEXT_PUBLIC_API_URL || "https://api.citydrivehire.com";
+    const Public_Api = "https://api.citydrivehire.com";
 
-    // 1. Fetch Real Data
+    // 2. Fetch Data with Error Handling
     useEffect(() => {
         const fetchFleet = async () => {
-            if (!session?.user?.id) return;
+            // Wait until Next-Auth has finished checking the session
+            if (status === "loading") return;
+
+            // If checked and no user id is found, handle accordingly
+            if (!session?.user?.id) {
+                console.warn("No session ID found. Ensure you are logged in.");
+                setIsLoading(false);
+                return;
+            }
+
             try {
-                // Pointing to your updated get-fleet.php
                 const res = await fetch(`${Public_Api}/partners/get-fleet.php?user_id=${session.user.id}`);
+                
+                // Catch 500 or other non-200 responses
+                if (!res.ok) {
+                    throw new Error(`Server returned status ${res.status}. Check your backend logs.`);
+                }
+
                 const data = await res.json();
+                
                 if (data.success) {
                     setFleet(data.data);
+                } else {
+                    throw new Error(data.message || "Failed to load fleet data.");
                 }
-            } catch (error) {
-                console.error("Failed to fetch fleet:", error);
+            } catch (err) {
+                console.error("Fetch error:", err);
+                setError(err.message);
             } finally {
                 setIsLoading(false);
             }
         };
 
         fetchFleet();
-    }, [session]);
+    }, [session, status, Public_Api]);
 
-    // 2. Filter & Sort Logic
+    // 3. Filter & Sort Logic
     const processedFleet = useMemo(() => {
         let result = [...fleet];
 
@@ -65,7 +86,7 @@ export default function PartnerFleetPage() {
                 case 'price-asc': return a.price - b.price;
                 case 'price-desc': return b.price - a.price;
                 case 'trips': return (b.trips || 0) - (a.trips || 0);
-                case 'newest': return b.id - a.id; // Assuming higher ID is newer
+                case 'newest': return b.id - a.id;
                 default: return 0;
             }
         });
@@ -73,30 +94,48 @@ export default function PartnerFleetPage() {
         return result;
     }, [fleet, searchQuery, statusFilter, sortOption]);
 
-    // 3. Pagination Logic
+    // 4. Pagination Logic
     const totalPages = Math.ceil(processedFleet.length / itemsPerPage);
     const paginatedFleet = processedFleet.slice(
         (currentPage - 1) * itemsPerPage,
         currentPage * itemsPerPage
     );
 
-   const getStatusColor = (status) => {
-    switch (status) {
-        case 'Available': 
-            return 'text-green-700 bg-green-50 border-green-100';
-        case 'Booked': 
-            return 'text-blue-700 bg-blue-50 border-blue-100';
-        case 'Maintenance': 
-            return 'text-orange-700 bg-orange-50 border-orange-100';
-        default: 
-            return 'text-gray-700 bg-gray-50 border-gray-100';
-    }
-};
+    const getStatusColor = (status) => {
+        switch (status) {
+            case 'Available': return 'text-green-700 bg-green-50 border-green-100';
+            case 'Booked': return 'text-blue-700 bg-blue-50 border-blue-100';
+            case 'Maintenance': return 'text-orange-700 bg-orange-50 border-orange-100';
+            default: return 'text-gray-700 bg-gray-50 border-gray-100';
+        }
+    };
 
+    // --- UI RENDERING ---
+
+    // 5. Error View (Handles 500 errors gracefully)
+    if (error) return (
+        <div className="flex flex-col items-center justify-center min-h-[400px] bg-white rounded-2xl border border-red-100 shadow-sm p-8">
+            <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mb-4">
+                <FaExclamationTriangle size={28} />
+            </div>
+            <h3 className="text-xl font-bold text-gray-900">Database Connection Error</h3>
+            <p className="text-gray-500 mt-2 mb-6 text-center max-w-md">
+                We encountered a server error (500). This usually means the PHP backend is failing to connect to the database or has a syntax error.
+            </p>
+            <button 
+                onClick={() => window.location.reload()} 
+                className="bg-gray-900 text-white px-8 py-3 rounded-xl font-semibold hover:bg-black transition-all"
+            >
+                Retry Request
+            </button>
+        </div>
+    );
+
+    // 6. Loading View
     if (isLoading) return (
         <div className="flex flex-col items-center justify-center min-h-[400px]">
             <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-green-600"></div>
-            <p className="mt-4 text-gray-500 font-medium">Loading your fleet...</p>
+            <p className="mt-4 text-gray-500 font-medium">Connecting to fleet...</p>
         </div>
     );
 
@@ -193,7 +232,7 @@ export default function PartnerFleetPage() {
                                 <div className="grid grid-cols-2 gap-4 py-4 border-t border-b border-gray-50 mb-4">
                                     <div>
                                         <p className="text-xs text-gray-400 mb-1 flex items-center gap-1"><FaMoneyBillWave /> Daily Rate</p>
-                                        <p className="font-bold text-gray-900 text-sm">ZMW {parseFloat(car.price).toLocaleString()}</p>
+                                        <p className="font-bold text-gray-900 text-sm">ZMW {parseFloat(car.price || 0).toLocaleString()}</p>
                                     </div>
                                     <div className="text-right">
                                         <p className="text-xs text-gray-400 mb-1 flex items-center justify-end gap-1"><FaRoad /> Total Trips</p>
@@ -244,7 +283,7 @@ export default function PartnerFleetPage() {
                 <div className="flex flex-col items-center justify-center py-20 bg-white rounded-2xl border-2 border-dashed border-gray-200">
                     <div className="w-16 h-16 bg-gray-50 text-gray-300 rounded-full flex items-center justify-center mb-4"><FaCar size={28} /></div>
                     <h3 className="text-lg font-bold text-gray-900">No vehicles found</h3>
-                    <p className="text-gray-500 mt-1 mb-6 text-center max-w-sm">Try adjusting your filters or add your first vehicle for **Emit Photography**.</p>
+                    <p className="text-gray-500 mt-1 mb-6 text-center max-w-sm">Try adjusting your filters or add your first vehicle.</p>
                     <button onClick={() => { setSearchQuery(''); setStatusFilter('all'); }} className="bg-gray-100 text-gray-700 px-6 py-2.5 rounded-lg font-semibold hover:bg-gray-200 transition-colors">Clear Filters</button>
                 </div>
             )}

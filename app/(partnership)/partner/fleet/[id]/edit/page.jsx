@@ -1,213 +1,300 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
-import { useSession } from 'next-auth/react';
-import { useParams, useRouter } from 'next/navigation';
+import { useState, useEffect, use } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { 
-    FaCloudUploadAlt, FaCar, FaCogs, FaMoneyBillWave, 
-    FaCheckCircle, FaArrowLeft, FaTrash, FaGasPump, FaUsers, FaPalette
+    FaArrowLeft, FaCar, FaInfoCircle, FaImage, FaSave, 
+    FaUpload, FaMoneyBillWave, FaTag, FaTrash, FaRoad, FaStar, FaSpinner 
 } from 'react-icons/fa';
 import { toast, Toaster } from 'react-hot-toast';
 
-export default function EditCarPage() {
-    const { data: session } = useSession();
-    const { id } = useParams();
+export default function EditCarPage({ params: paramsPromise }) {
     const router = useRouter();
+    const params = use(paramsPromise);
+    const id = params?.id;
+
+    const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
     
-    const [loading, setLoading] = useState(false);
-    const [fetching, setFetching] = useState(true);
-    const [existingImages, setExistingImages] = useState([]);
-    const [newImageFiles, setNewImageFiles] = useState([]);
-    const [carData, setCarData] = useState(null);
-    const fileInputRef = useRef(null);
+    // IMAGE STATES
+    const [selectedFiles, setSelectedFiles] = useState([]); // New uploads
+    const [previews, setPreviews] = useState([]); // New upload previews
+    const [existingImages, setExistingImages] = useState([]); // Images already on server
+    const [featuredIndex, setFeaturedIndex] = useState(0); 
 
-    const Public_Api = process.env.NEXT_PUBLIC_API_URL || "https://api.citydrivehire.com";
+    const [formData, setFormData] = useState({
+        name: '',
+        make: '',
+        model: '',
+        plate_number: '',
+        category: 'suv',
+        daily_rate: '',
+        transmission: 'Automatic',
+        fuel_type: 'Diesel',
+        seats: 5,
+        mileage: '',
+        description: '',
+        color: '',
+        partner_id: '', 
+        latitude: '',
+        longitude: ''
+    });
 
+    const BASE_API = process.env.NEXT_PUBLIC_API_URL || "https://api.citydrivehire.com";
+
+    // 1. Load Existing Data
     useEffect(() => {
-        const fetchCarDetails = async () => {
-            if (!session?.user?.id) return;
+        async function fetchVehicle() {
             try {
-                const res = await fetch(`${Public_Api}/partners/get-vehicle-details.php?vehicle_id=${id}&user_id=${session.user.id}`);
-                const result = await res.json();
-                if (result.success) {
-                    const car = result.data.info;
-                    setCarData(car);
-                    const imgs = typeof car.image_url === 'string' ? JSON.parse(car.image_url) : car.image_url;
-                    setExistingImages(imgs || []);
+                const res = await fetch(`${BASE_API}/admin/get_car_details.php?id=${id}`);
+                const json = await res.json();
+                if (json.success) {
+                    setFormData(json.car);
+                    // Set existing images from server
+                    setExistingImages(json.car.images || []); 
+                    setFeaturedIndex(json.car.featured_image_index || 0);
+                } else {
+                    toast.error("Vehicle not found");
                 }
             } catch (error) {
-                toast.error("Failed to load details");
+                toast.error("Failed to load vehicle data");
             } finally {
-                setFetching(false);
+                setLoading(false);
             }
-        };
-        fetchCarDetails();
-    }, [id, session]);
+        }
+        if (id) fetchVehicle();
+    }, [id, BASE_API]);
 
-    const handleFileSelect = (e) => {
+    // Clean up previews
+    useEffect(() => {
+        return () => previews.forEach(url => URL.revokeObjectURL(url));
+    }, [previews]);
+
+    const handleFileChange = (e) => {
         const files = Array.from(e.target.files);
-        setNewImageFiles(prev => [...prev, ...files]);
+        if (selectedFiles.length + existingImages.length + files.length > 8) {
+            toast.error("Limit: 8 images total.");
+            return;
+        }
+        setSelectedFiles(prev => [...prev, ...files]);
+        const newPreviews = files.map(file => URL.createObjectURL(file));
+        setPreviews(prev => [...prev, ...newPreviews]);
+    };
+
+    const removeNewImage = (index) => {
+        setSelectedFiles(prev => prev.filter((_, i) => i !== index));
+        setPreviews(prev => {
+            URL.revokeObjectURL(prev[index]);
+            return prev.filter((_, i) => i !== index);
+        });
+    };
+
+    const removeExistingImage = (index) => {
+        setExistingImages(prev => prev.filter((_, i) => i !== index));
+        // Reset featured index if it was pointing to the deleted image
+        if (featuredIndex >= index) setFeaturedIndex(0);
+    };
+
+    const handleChange = (e) => {
+        setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
     const handleSubmit = async (e) => {
-        e.preventDefault();
-        setLoading(true);
-        const formData = new FormData(e.target);
-        formData.append('vehicle_id', id);
-        formData.append('partner_id', session.user.id);
-        formData.append('existing_images', JSON.stringify(existingImages));
-        newImageFiles.forEach((file) => formData.append('images[]', file));
+        if (e) e.preventDefault();
+        setSaving(true);
+
+        const data = new FormData();
+        data.append('id', id);
+
+        // Append all text fields
+        Object.keys(formData).forEach(key => data.append(key, formData[key]));
+        data.append('featured_image_index', featuredIndex);
+        
+        // Tell backend which existing images we kept
+        data.append('existing_images', JSON.stringify(existingImages));
+
+        // Append new images
+        selectedFiles.forEach((file) => {
+            data.append('images[]', file);
+        });
 
         try {
-            const res = await fetch(`${Public_Api}/partners/update-car.php`, {
+            const res = await fetch(`${BASE_API}/partners/update-car.php`, {
                 method: 'POST',
-                body: formData,
+                body: data,
             });
-            const data = await res.json();
-            if (data.success) {
-                toast.success("Updates Saved");
-                router.push(`/partner/fleet/${id}`);
+
+            const result = await res.json();
+            if (result.status === "success" || result.success) {
+                toast.success("Vehicle updated successfully!");
+                setTimeout(() => router.push('/admin/cars'), 1500);
+            } else {
+                toast.error(result.message || "Update failed");
             }
         } catch (error) {
-            toast.error("Connection error");
+            toast.error("Network error. Please try again.");
         } finally {
-            setLoading(false);
+            setSaving(false);
         }
     };
 
-    if (fetching) return <div className="min-h-screen flex items-center justify-center bg-[#FBFBFE] text-gray-300 animate-pulse font-light tracking-widest uppercase text-sm">Synchronizing...</div>;
-
-    return (
-        <div className="min-h-screen bg-[#FBFBFE] pb-24">
-            <Toaster position="top-right" />
-            
-            {/* Minimal Header */}
-            <div className="bg-white/80 backdrop-blur-md sticky top-0 z-30">
-                <div className="max-w-6xl mx-auto px-6 h-24 flex items-center justify-between">
-                    <div className="flex items-center gap-6">
-                        <button onClick={() => router.back()} className="w-10 h-10 flex items-center justify-center bg-gray-50 hover:bg-gray-100 rounded-full transition-all text-gray-400">
-                            <FaArrowLeft size={14} />
-                        </button>
-                        <div>
-                            <p className="text-[10px] font-bold text-blue-500 uppercase tracking-[0.2em] mb-1">Fleet Management</p>
-                            <h1 className="text-2xl font-light text-gray-800 tracking-tight">{carData?.name}</h1>
-                        </div>
-                    </div>
-                    <button 
-                        form="edit-car-form"
-                        type="submit" 
-                        disabled={loading} 
-                        className="bg-gray-900 hover:bg-black text-white px-10 py-4 rounded-2xl font-bold text-xs uppercase tracking-widest transition-all shadow-xl shadow-gray-200 flex items-center gap-3 disabled:bg-gray-200"
-                    >
-                        {loading ? 'Processing...' : 'Update Vehicle'}
-                    </button>
-                </div>
-            </div>
-
-            <main className="max-w-6xl mx-auto px-6 py-12">
-                <form id="edit-car-form" onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-12 gap-12">
-                    
-                    {/* Media Card */}
-                    <div className="lg:col-span-12">
-                        <section className="bg-white rounded-[2.5rem] shadow-sm p-10">
-                            <div className="flex items-center justify-between mb-10">
-                                <div>
-                                    <h3 className="text-lg font-bold text-gray-900 tracking-tight">Gallery</h3>
-                                    <p className="text-sm text-gray-400">Manage the visual presentation of your vehicle.</p>
-                                </div>
-                                <button 
-                                    type="button" 
-                                    onClick={() => fileInputRef.current.click()}
-                                    className="text-xs font-bold text-blue-600 hover:text-blue-700 uppercase tracking-widest"
-                                >
-                                    + Add New Media
-                                </button>
-                            </div>
-
-                            <div className="grid grid-cols-2 md:grid-cols-5 gap-6">
-                                {existingImages.map((img, idx) => (
-                                    <div key={idx} className="group relative aspect-[4/3] rounded-3xl overflow-hidden bg-gray-50">
-                                        <img src={`${Public_Api}/public/${img.replace(/^\//, '')}`} className="w-full h-full object-cover" alt="fleet" />
-                                        <div className="absolute inset-0 bg-white/60 opacity-0 group-hover:opacity-100 transition-all backdrop-blur-[2px] flex items-center justify-center">
-                                            <button type="button" onClick={() => setExistingImages(prev => prev.filter((_, i) => i !== idx))} className="bg-white text-red-500 w-12 h-12 rounded-full shadow-2xl flex items-center justify-center hover:scale-110 transition-transform">
-                                                <FaTrash size={16} />
-                                            </button>
-                                        </div>
-                                    </div>
-                                ))}
-                                {newImageFiles.map((file, idx) => (
-                                    <div key={idx} className="relative aspect-[4/3] rounded-3xl overflow-hidden shadow-inner ring-2 ring-blue-100">
-                                        <img src={URL.createObjectURL(file)} className="w-full h-full object-cover" alt="new" />
-                                        <div className="absolute top-3 left-3 bg-blue-500 text-[8px] text-white px-2 py-1 rounded-lg font-black uppercase tracking-tighter">Uploading</div>
-                                    </div>
-                                ))}
-                                <input type="file" multiple accept="image/*" className="hidden" ref={fileInputRef} onChange={handleFileSelect} />
-                            </div>
-                        </section>
-                    </div>
-
-                    {/* Specification Grid */}
-                    <div className="lg:col-span-8 space-y-8">
-                        <section className="bg-white rounded-[2.5rem] shadow-sm p-10">
-                            <h3 className="text-lg font-bold text-gray-900 mb-10 tracking-tight">Specifications</h3>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-8">
-                                <InputField label="Public Name" name="name" defaultValue={carData?.name} />
-                                <InputField label="Price (ZMW / Day)" name="price_per_day" type="number" defaultValue={carData?.price_per_day} />
-                                
-                                <div className="space-y-3">
-                                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Transmission</label>
-                                    <select name="transmission" defaultValue={carData?.transmission} className="w-full bg-gray-50/50 border-none rounded-2xl p-4 text-sm font-bold focus:bg-white focus:ring-2 focus:ring-blue-500/10 transition-all outline-none appearance-none">
-                                        <option value="Automatic">Automatic</option>
-                                        <option value="Manual">Manual</option>
-                                    </select>
-                                </div>
-
-                                <InputField label="Fuel Type" name="fuel" defaultValue={carData?.fuel} />
-                                <InputField label="Seating" name="seats" type="number" defaultValue={carData?.seats} />
-                                <InputField label="Exterior Color" name="color" defaultValue={carData?.color} />
-                            </div>
-                        </section>
-                    </div>
-
-                    {/* Quick Info Sidebar */}
-                    <div className="lg:col-span-4">
-                        <div className="bg-blue-600 rounded-[2.5rem] p-10 text-white shadow-2xl shadow-blue-100 sticky top-32 overflow-hidden">
-                            <div className="relative z-10">
-                                <h3 className="text-xl font-medium mb-2">Fleet Audit</h3>
-                                <p className="text-blue-100 text-sm font-light mb-10">All changes made here will be audited and synced to the customer-facing Emit Photography mobile app.</p>
-                                
-                                <div className="space-y-6 mb-10">
-                                    <div className="flex justify-between items-center text-sm">
-                                        <span className="opacity-60">Plate</span>
-                                        <span className="font-mono bg-blue-500 px-3 py-1 rounded-lg">{carData?.plate_number}</span>
-                                    </div>
-                                    <div className="flex justify-between items-center text-sm">
-                                        <span className="opacity-60">Visibility</span>
-                                        <span className="font-bold">{carData?.available == 1 ? 'Live' : 'Hidden'}</span>
-                                    </div>
-                                </div>
-                            </div>
-                            {/* Decorative element */}
-                            <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-blue-500 rounded-full blur-3xl opacity-50"></div>
-                        </div>
-                    </div>
-
-                </form>
-            </main>
+    if (loading) return (
+        <div className="flex justify-center items-center h-screen text-green-600">
+            <FaSpinner className="animate-spin text-3xl" />
         </div>
     );
-}
 
-function InputField({ label, ...props }) {
     return (
-        <div className="space-y-3">
-            <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">
-                {label}
-            </label>
-            <input 
-                {...props}
-                className="w-full bg-gray-50/50 border-none rounded-2xl p-4 text-sm font-bold focus:bg-white focus:ring-4 focus:ring-blue-500/5 transition-all outline-none placeholder:text-gray-200"
-            />
+        <div className="max-w-8xl mx-auto pb-10 px-4">
+            <Toaster position="top-center" />
+
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-8">
+                <div className="flex items-center gap-4">
+                    <Link href="/admin/cars" className="p-2 bg-white border border-gray-200 rounded-lg text-gray-500 hover:text-slate-900 transition-colors">
+                        <FaArrowLeft />
+                    </Link>
+                    <div>
+                        <h1 className="text-2xl font-bold text-gray-800">Edit Vehicle</h1>
+                        <p className="text-sm text-gray-500">Modifying: {formData.name}</p>
+                    </div>
+                </div>
+                <button
+                    type="button"
+                    onClick={handleSubmit}
+                    disabled={saving}
+                    className="w-full md:w-auto px-6 py-2.5 bg-slate-900 text-white rounded-lg font-bold hover:bg-slate-800 shadow-md flex items-center justify-center gap-2 disabled:opacity-70 transition-all"
+                >
+                    {saving ? <FaSpinner className="animate-spin" /> : <FaSave />}
+                    {saving ? 'Updating...' : 'Update Vehicle'}
+                </button>
+            </div>
+
+            <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                
+                {/* --- LEFT COLUMN --- */}
+                <div className="lg:col-span-2 space-y-8">
+                    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                        <h2 className="text-lg font-bold text-gray-800 mb-6 flex items-center gap-2 border-b border-gray-100 pb-3">
+                            <FaCar className="text-green-600" /> Vehicle Details
+                        </h2>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="md:col-span-2">
+                                <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Display Name</label>
+                                <input name="name" value={formData.name} onChange={handleChange} required className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-green-500 outline-none" />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Make</label>
+                                <input name="make" value={formData.make} onChange={handleChange} required className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-green-500 outline-none" />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Model</label>
+                                <input name="model" value={formData.model} onChange={handleChange} required className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-green-500 outline-none" />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-gray-500 uppercase mb-2">License Plate</label>
+                                <input name="plate_number" value={formData.plate_number} onChange={handleChange} required className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-green-500 outline-none uppercase font-mono" />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Category</label>
+                                <div className="relative">
+                                    <FaTag className="absolute left-3 top-3.5 text-gray-400" />
+                                    <select name="category" value={formData.category} onChange={handleChange} className="w-full border border-gray-300 rounded-lg p-3 pl-10 text-sm bg-white focus:ring-2 focus:ring-green-500 outline-none">
+                                         <option value="suv">SUV / 4x4</option>
+                                        <option value="sedan">Sedan</option>
+                                        <option value="hatchback">Hatchback</option>
+                                        <option value="luxury">Luxury / Executive</option>
+                                        <option value="bus">Bus / Van</option>
+                                        <option value="van">Cargo Van</option>
+                                        <option value="pickup">Pickup Truck</option>
+                                        <option value="convertible">Convertible</option>
+                                        <option value="compact">Compact / Small</option>
+                                        <option value="electric">Electric Vehicle</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                        <h2 className="text-lg font-bold text-gray-800 mb-6 flex items-center gap-2 border-b border-gray-100 pb-3">
+                            <FaInfoCircle className="text-blue-600" /> Technical Specs
+                        </h2>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div>
+                                <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Transmission</label>
+                                <select name="transmission" value={formData.transmission} onChange={handleChange} className="w-full border border-gray-300 rounded-lg p-3 text-sm bg-white outline-none">
+                                    <option value="Automatic">Automatic</option>
+                                    <option value="Manual">Manual</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Fuel Type</label>
+                                <select name="fuel_type" value={formData.fuel_type} onChange={handleChange} className="w-full border border-gray-300 rounded-lg p-3 text-sm bg-white outline-none">
+                                    <option value="Diesel">Diesel</option>
+                                    <option value="Petrol">Petrol</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Mileage (km)</label>
+                                <div className="relative">
+                                    <FaRoad className="absolute left-3 top-3.5 text-gray-400" />
+                                    <input name="mileage" type="number" value={formData.mileage} onChange={handleChange} className="w-full border border-gray-300 rounded-lg p-3 pl-10 text-sm outline-none" />
+                                </div>
+                            </div>
+                            <div className="md:col-span-3">
+                                <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Description</label>
+                                <textarea name="description" value={formData.description} onChange={handleChange} rows="4" className="w-full border border-gray-300 rounded-lg p-3 text-sm outline-none resize-none" placeholder="Enter vehicle features..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* --- RIGHT COLUMN --- */}
+                <div className="space-y-8">
+                    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                        <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                            <FaMoneyBillWave className="text-green-600" /> Pricing
+                        </h2>
+                        <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Daily Rate (ZMW)</label>
+                        <div className="relative">
+                            <span className="absolute left-3 top-3 text-gray-500 font-bold">K</span>
+                            <input name="daily_rate" value={formData.daily_rate} type="number" onChange={handleChange} required className="w-full border border-gray-300 rounded-lg p-3 pl-8 text-sm outline-none font-bold text-lg" />
+                        </div>
+                    </div>
+
+                    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                        <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                            <FaImage className="text-purple-600" /> Manage Images
+                        </h2>
+
+                        <label className="border-2 border-dashed border-gray-300 rounded-xl p-6 flex flex-col items-center justify-center text-gray-500 hover:bg-gray-50 transition-colors cursor-pointer bg-gray-50 mb-4">
+                            <FaUpload className="text-xl mb-2 text-purple-600" />
+                            <span className="text-xs font-bold text-center">Add More Photos</span>
+                            <input type="file" multiple accept="image/*" onChange={handleFileChange} className="hidden" />
+                        </label>
+
+                        <div className="grid grid-cols-3 gap-2">
+                            {/* Existing Images */}
+                            {existingImages.map((src, index) => (
+                                <div key={`old-${index}`} className={`relative aspect-square rounded-lg overflow-hidden border-2 ${featuredIndex === index ? 'border-green-500' : 'border-gray-100'}`}>
+                                    <img src={src} className="w-full h-full object-cover" alt="Existing" />
+                                    <button type="button" onClick={() => removeExistingImage(index)} className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full"><FaTrash size={8} /></button>
+                                    <div className="absolute bottom-0 left-0 right-0 bg-black/40 text-[8px] text-white text-center py-0.5 font-bold">CURRENT</div>
+                                </div>
+                            ))}
+
+                            {/* New Previews */}
+                            {previews.map((src, index) => (
+                                <div key={`new-${index}`} className="relative aspect-square rounded-lg overflow-hidden border-2 border-blue-400">
+                                    <img src={src} className="w-full h-full object-cover" alt="New" />
+                                    <button type="button" onClick={() => removeNewImage(index)} className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full"><FaTrash size={8} /></button>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            </form>
         </div>
     );
 }

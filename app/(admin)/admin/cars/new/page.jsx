@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { 
@@ -35,8 +35,19 @@ export default function AddCarPage() {
         longitude: ''       
     });
 
+    const BASE_API = process.env.NEXT_PUBLIC_API_URL || "https://api.citydrivehire.com";
+
+    // Revoke object URLs to avoid memory leaks
+    useEffect(() => {
+        return () => previews.forEach(url => URL.revokeObjectURL(url));
+    }, [previews]);
+
     const handleFileChange = (e) => {
         const files = Array.from(e.target.files);
+        if (selectedFiles.length + files.length > 8) {
+            toast.error("Limit: 8 images per vehicle.");
+            return;
+        }
         setSelectedFiles(prev => [...prev, ...files]);
         const newPreviews = files.map(file => URL.createObjectURL(file));
         setPreviews(prev => [...prev, ...newPreviews]);
@@ -59,8 +70,6 @@ export default function AddCarPage() {
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
-
-    const BASE_API = process.env.NEXT_PUBLIC_API_URL || "https://api.citydrivehire.com";
 
     const handleSubmit = async (e) => {
         if (e) e.preventDefault();
@@ -105,14 +114,14 @@ export default function AddCarPage() {
             <Toaster position="top-center" />
 
             {/* Header */}
-            <div className="flex items-center justify-between gap-4 mb-8">
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-8">
                 <div className="flex items-center gap-4">
                     <Link href="/admin/cars" className="p-2 bg-white border border-gray-200 rounded-lg text-gray-500 hover:text-slate-900 transition-colors">
                         <FaArrowLeft />
                     </Link>
                     <div>
                         <h1 className="text-2xl font-bold text-gray-800">Add New Vehicle</h1>
-                        <p className="text-sm text-gray-500">Fleet management for Emit Photography</p>
+                        <p className="text-sm text-gray-500">Update your fleet listings</p>
                     </div>
                 </div>
                 <button
@@ -121,12 +130,12 @@ export default function AddCarPage() {
                     disabled={loading}
                     className="px-6 py-2.5 bg-slate-900 text-white rounded-lg font-bold hover:bg-slate-800 shadow-md flex items-center gap-2 disabled:opacity-70 transition-all"
                 >
-                    {loading ? 'Processing...' : <><FaSave /> Save Vehicle</>}
+                    {loading ? 'Saving...' : <><FaSave /> Save Vehicle</>}
                 </button>
             </div>
 
             <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* --- LEFT COLUMN --- */}
+                {/* --- LEFT COLUMN: CORE INFO --- */}
                 <div className="lg:col-span-2 space-y-8">
                     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
                         <h2 className="text-lg font-bold text-gray-800 mb-6 flex items-center gap-2 border-b border-gray-100 pb-3">
@@ -135,19 +144,19 @@ export default function AddCarPage() {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="md:col-span-2">
                                 <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Display Name</label>
-                                <input name="name" onChange={handleChange} required placeholder="Example: Luxury Toyota Hilux 2024" className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-green-500 outline-none" />
+                                <input name="name" value={formData.name} onChange={handleChange} required placeholder="Example: Luxury Toyota Hilux 2024" className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-green-500 outline-none" />
                             </div>
                             <div>
                                 <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Make</label>
-                                <input name="make" onChange={handleChange} required placeholder="Toyota" className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-green-500 outline-none" />
+                                <input name="make" value={formData.make} onChange={handleChange} required placeholder="Toyota" className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-green-500 outline-none" />
                             </div>
                             <div>
                                 <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Model</label>
-                                <input name="model" onChange={handleChange} required placeholder="Hilux" className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-green-500 outline-none" />
+                                <input name="model" value={formData.model} onChange={handleChange} required placeholder="Hilux" className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-green-500 outline-none" />
                             </div>
                             <div>
                                 <label className="block text-xs font-bold text-gray-500 uppercase mb-2">License Plate</label>
-                                <input name="plate_number" onChange={handleChange} required placeholder="ABC 1234" className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-green-500 outline-none uppercase font-mono" />
+                                <input name="plate_number" value={formData.plate_number} onChange={handleChange} required placeholder="ABC 1234" className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-green-500 outline-none uppercase font-mono" />
                             </div>
                             <div>
                                 <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Category</label>
@@ -182,14 +191,14 @@ export default function AddCarPage() {
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                             <div>
                                 <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Transmission</label>
-                                <select name="transmission" onChange={handleChange} className="w-full border border-gray-300 rounded-lg p-3 text-sm bg-white outline-none">
+                                <select name="transmission" value={formData.transmission} onChange={handleChange} className="w-full border border-gray-300 rounded-lg p-3 text-sm bg-white outline-none">
                                     <option value="Automatic">Automatic</option>
                                     <option value="Manual">Manual</option>
                                 </select>
                             </div>
                             <div>
                                 <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Fuel Type</label>
-                                <select name="fuel_type" onChange={handleChange} className="w-full border border-gray-300 rounded-lg p-3 text-sm bg-white outline-none">
+                                <select name="fuel_type" value={formData.fuel_type} onChange={handleChange} className="w-full border border-gray-300 rounded-lg p-3 text-sm bg-white outline-none">
                                     <option value="Diesel">Diesel</option>
                                     <option value="Petrol">Petrol</option>
                                     <option value="Hybrid">Hybrid</option>
@@ -200,26 +209,26 @@ export default function AddCarPage() {
                                 <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Mileage (km)</label>
                                 <div className="relative">
                                     <FaRoad className="absolute left-3 top-3.5 text-gray-400" />
-                                    <input name="mileage" type="number" onChange={handleChange} placeholder="0" className="w-full border border-gray-300 rounded-lg p-3 pl-10 text-sm outline-none" />
+                                    <input name="mileage" type="number" value={formData.mileage} onChange={handleChange} placeholder="0" className="w-full border border-gray-300 rounded-lg p-3 pl-10 text-sm outline-none" />
                                 </div>
                             </div>
                             <div>
                                 <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Seats</label>
-                                <input name="seats" type="number" defaultValue="5" onChange={handleChange} className="w-full border border-gray-300 rounded-lg p-3 text-sm outline-none" />
+                                <input name="seats" type="number" value={formData.seats} onChange={handleChange} className="w-full border border-gray-300 rounded-lg p-3 text-sm outline-none" />
                             </div>
                             <div>
                                 <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Color</label>
-                                <input name="color" onChange={handleChange} placeholder="White" className="w-full border border-gray-300 rounded-lg p-3 text-sm outline-none" />
+                                <input name="color" value={formData.color} onChange={handleChange} placeholder="White" className="w-full border border-gray-300 rounded-lg p-3 text-sm outline-none" />
                             </div>
                             <div className="md:col-span-3">
                                 <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Description</label>
-                                <textarea name="description" onChange={handleChange} rows="4" className="w-full border border-gray-300 rounded-lg p-3 text-sm outline-none resize-none" placeholder="Enter vehicle features..."></textarea>
+                                <textarea name="description" value={formData.description} onChange={handleChange} rows="4" className="w-full border border-gray-300 rounded-lg p-3 text-sm outline-none resize-none" placeholder="Enter vehicle features..."></textarea>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                {/* --- RIGHT COLUMN --- */}
+                {/* --- RIGHT COLUMN: PRICING & MEDIA --- */}
                 <div className="space-y-8">
                     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
                         <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
@@ -251,7 +260,7 @@ export default function AddCarPage() {
 
                         <label className="border-2 border-dashed border-gray-300 rounded-xl p-6 flex flex-col items-center justify-center text-gray-500 hover:bg-gray-50 transition-colors cursor-pointer bg-gray-50">
                             <FaUpload className="text-xl mb-2 text-purple-600" />
-                            <span className="text-xs font-bold">Add Photos</span>
+                            <span className="text-xs font-bold">Upload Photos</span>
                             <input type="file" multiple accept="image/*" onChange={handleFileChange} className="hidden" />
                         </label>
 
@@ -285,6 +294,9 @@ export default function AddCarPage() {
                                 </div>
                             ))}
                         </div>
+                        {previews.length > 0 && (
+                            <p className="text-[10px] text-gray-400 mt-3 text-center italic">Tip: Click an image to set it as the cover photo</p>
+                        )}
                     </div>
                 </div>
             </form>
