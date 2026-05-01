@@ -26,6 +26,9 @@ export default function PartnerFleetPage() {
 
     const Public_Api = "https://api.citydrivehire.com";
 
+    const partnerId = session?.user?.partner_id;
+
+
     // 2. Fetch Data with Error Handling
     useEffect(() => {
         const fetchFleet = async () => {
@@ -40,7 +43,7 @@ export default function PartnerFleetPage() {
             }
 
             try {
-                const res = await fetch(`${Public_Api}/partners/get-fleet.php?user_id=${session.user.id}`);
+                const res = await fetch(`${Public_Api}/partners/get-fleet.php?user_id=${partnerId}`);
                 
                 // Catch 500 or other non-200 responses
                 if (!res.ok) {
@@ -217,7 +220,7 @@ export default function PartnerFleetPage() {
                                     <div className="relative w-24 h-24 flex-shrink-0 bg-gray-100 rounded-xl overflow-hidden border border-gray-100 shadow-inner">
                                         {car.image ? (
                                             <img 
-                                                src={`${Public_Api}/public/${car.image}`} 
+                                                src={`${Public_Api}/${car.image}`} 
                                                 alt={car.name} 
                                                 className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" 
                                             />

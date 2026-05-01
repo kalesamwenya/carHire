@@ -60,74 +60,90 @@ function VerifyContent() {
 
     const BrandingContent = () => (
         <div className={`relative z-10 max-w-md text-left transition-all duration-1000 ease-out ${mounted ? 'translate-x-0 opacity-100' : '-translate-x-10 opacity-0'}`}>
-            <div className="flex items-center gap-3 mb-8">
-                <div className="w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center text-green-500 shadow-lg">
-                    <FaCarSide className="text-xl" />
+            <div className="flex items-center gap-3 mb-8 group">
+                <div className="w-12 h-12 rounded-xl flex items-center justify-center shadow-lg bg-slate-900 text-green-500 group-hover:scale-105 transition-all">
+                    <FaCarSide className="text-2xl" />
                 </div>
                 <div>
-                    <h1 className="text-xl font-bold text-slate-900 tracking-tight leading-none">
+                    <h1 className="text-2xl font-bold tracking-tight leading-none text-slate-900">
                         City<span className="text-green-600">Drive</span>
                     </h1>
-                    <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">Hire</p>
+                    <p className="text-[10px] uppercase tracking-widest font-black text-slate-400">
+                        Car Hire
+                    </p>
                 </div>
             </div>
+
             <h1 className="text-5xl font-bold text-gray-900 mb-6 leading-tight">
                 Almost <br/>
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-600 to-green-800">
                     There.
                 </span>
             </h1>
-            <p className="text-gray-600 text-lg leading-relaxed">
-                Confirming your details so you can get behind the wheel.
+
+            <p className="text-gray-500 text-lg leading-relaxed italic">
+                "Confirming your details so you can get behind the wheel."
             </p>
         </div>
     );
 
     return (
-        <div className="min-h-screen bg-gray-50 flex overflow-hidden relative">
+        <div className="min-h-screen bg-white flex overflow-hidden relative">
             <Toaster position="top-center" />
             
-            <div className="hidden lg:flex w-1/2 bg-gray-50 flex-col justify-center items-center px-12 border-r border-gray-100 relative">
+            <div className="hidden lg:flex w-1/2 bg-slate-50 flex-col justify-center items-center px-12 border-r border-gray-100 relative">
                 <BrandingContent />
             </div>
 
-            <div className="w-full lg:w-1/2 flex flex-col justify-center items-center p-6 lg:p-12 relative">
-                <Link href="/" className="absolute top-8 left-8 flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-green-700 transition-colors group">
-                    <div className="w-8 h-8 rounded-full bg-white border border-gray-200 flex items-center justify-center shadow-sm">
-                        <FaArrowLeft className="text-xs" />
-                    </div>
-                    <span>Return Home</span>
+            <div className="w-full lg:w-1/2 flex flex-col justify-center items-center p-6 lg:p-12 relative bg-white">
+                <Link href="/" className="absolute top-8 left-8 flex items-center gap-2 text-sm font-bold text-gray-400 hover:text-green-700 transition-colors group z-20">
+                    <FaArrowLeft className="group-hover:-translate-x-1 transition-transform" />
+                    <span>Back</span>
                 </Link>
 
-                <div className="w-full max-w-[400px]">
+                <div className="w-full max-w-[440px]">
                     <AuthShell title="Account Verification" subtitle="Finalizing your registration">
                         <div className="mt-8 flex flex-col items-center text-center">
                             
                             {status === "loading" && (
-                                <div className="space-y-4 animate-in fade-in duration-500">
-                                    <FaSpinner className="text-5xl text-green-600 animate-spin mx-auto" />
-                                    <p className="text-black font-medium">{message}</p>
+                                <div className="space-y-6 animate-in fade-in duration-500">
+                                    <div className="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center mx-auto">
+                                        <FaSpinner className="text-3xl text-green-600 animate-spin" />
+                                    </div>
+                                    <p className="text-black font-bold uppercase tracking-widest text-xs">{message}</p>
                                 </div>
                             )}
 
                             {status === "success" && (
-                                <div className="space-y-4 animate-in zoom-in duration-500">
-                                    <FaCheckCircle className="text-6xl text-green-600 mx-auto" />
-                                    <h3 className="text-xl font-bold text-black">Email Verified!</h3>
-                                    <p className="text-black">{message}</p>
-                                    <p className="text-sm text-gray-500 italic pt-4">Redirecting you to sign in...</p>
-                                    <Link href="/auth/signin" className="block w-full py-3 bg-green-600 text-white rounded-lg font-medium mt-6 shadow-md hover:bg-green-700 transition-all">
-                                        Sign In Now
-                                    </Link>
+                                <div className="space-y-6 animate-in zoom-in duration-500">
+                                    <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto shadow-sm">
+                                        <FaCheckCircle className="text-4xl text-green-600" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">Email Verified!</h3>
+                                        <p className="text-gray-500 mt-2 text-sm">{message}</p>
+                                    </div>
+                                    <div className="pt-4">
+                                        <p className="text-[10px] text-green-700 font-bold uppercase tracking-widest animate-pulse mb-6">Redirecting you to sign in...</p>
+                                        <Link href="/auth/signin" className="block w-full py-4 bg-slate-900 hover:bg-black text-white rounded-xl font-bold shadow-xl active:scale-[0.98] transition-all">
+                                            Sign In Now
+                                        </Link>
+                                    </div>
                                 </div>
                             )}
 
                             {status === "error" && (
-                                <div className="space-y-4 animate-in shake duration-500">
-                                    <FaExclamationTriangle className="text-6xl text-red-500 mx-auto" />
-                                    <h3 className="text-xl font-bold text-black">Verification Failed</h3>
-                                    <p className="text-red-700 bg-red-50 p-3 rounded-lg text-sm border border-red-100">{message}</p>
-                                    <Link href="/auth/signup" className="block w-full py-3 border border-gray-200 text-black rounded-lg font-medium mt-6 hover:bg-gray-50 transition-all shadow-sm">
+                                <div className="space-y-6 animate-in shake duration-500">
+                                    <div className="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mx-auto">
+                                        <FaExclamationTriangle className="text-4xl text-red-500" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">Verification Failed</h3>
+                                        <div className="mt-3 p-4 bg-red-50 border border-red-100 rounded-xl">
+                                            <p className="text-red-600 text-sm font-medium">{message}</p>
+                                        </div>
+                                    </div>
+                                    <Link href="/auth/signup" className="block w-full py-4 border-2 border-slate-100 text-slate-900 rounded-xl font-bold hover:bg-slate-50 transition-all shadow-sm">
                                         Try Registering Again
                                     </Link>
                                 </div>
@@ -143,7 +159,11 @@ function VerifyContent() {
 
 export default function VerifyPage() {
     return (
-        <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-gray-50"><FaSpinner className="animate-spin text-green-600 text-3xl" /></div>}>
+        <Suspense fallback={
+            <div className="min-h-screen flex items-center justify-center bg-white">
+                <FaSpinner className="animate-spin text-green-600 text-3xl" />
+            </div>
+        }>
             <VerifyContent />
         </Suspense>
     );

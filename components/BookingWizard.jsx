@@ -13,7 +13,7 @@ import { useSession } from 'next-auth/react';
 
 // --- CONSTANTS ---
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "https://api.citydrivehire.com";
-const MIN_RENTAL_DAYS = 2;
+const DEFAULT_MIN_DAYS = 2; // Fallback if DB column is empty
 
 // --- UTILITY: Generate IDs ---
 const generateBookingIds = () => {
@@ -135,8 +135,10 @@ function BookingWizardContent() {
         fetchCars();
     }, [initialCarId]);
 
+    // --- DYNAMIC PRICING LOGIC ---
     const pricing = useMemo(() => {
-        if (!selectedCar || !form.from || !form.to) return { days: 0, total: 0, isValid: false, meetsMinimum: false };
+        if (!selectedCar || !form.from || !form.to) return { days: 0, total: 0, isValid: false, meetsMinimum: false, minDays: DEFAULT_MIN_DAYS };
+        
         const start = new Date(form.from);
         const end = new Date(form.to);
         const diffTime = end - start;
@@ -144,11 +146,15 @@ function BookingWizardContent() {
         const days = diffDays > 0 ? diffDays : 0; 
         const dailyRate = Number(selectedCar.price) || 0;
         
+        // Use min_booking_days from DB row
+        const minDaysRequired = Number(selectedCar.min_booking_days) || DEFAULT_MIN_DAYS;
+        
         return { 
             days, 
             total: days * dailyRate,
             isValid: diffDays > 0,
-            meetsMinimum: days >= MIN_RENTAL_DAYS
+            meetsMinimum: days >= minDaysRequired,
+            minDays: minDaysRequired
         };
     }, [selectedCar, form.from, form.to]);
 
@@ -166,7 +172,10 @@ function BookingWizardContent() {
             const { name, phone, license, from, to } = form;
             if (!name || !phone || !license || !from || !to) return toast.error('Please fill in all fields');
             if (!pricing.isValid) return toast.error('Check your dates. End date must be after start date.');
-            if (!pricing.meetsMinimum) return toast.error(`Minimum rental period is ${MIN_RENTAL_DAYS} days.`);
+            
+            // VALIDATE DYNAMIC MINIMUM
+            if (!pricing.meetsMinimum) return toast.error(`For the ${selectedCar.name}, the minimum hire duration is ${pricing.minDays} days.`);
+            
             setGeneratedIds(generateBookingIds());
             setStep(4);
         }
@@ -313,7 +322,7 @@ function BookingWizardContent() {
                                     <div className="text-black text-sm">⚙️ {selectedCar.transmission || 'Manual'}</div>
                                     <div className="text-black text-sm">⛽ {selectedCar.fuel || 'Petrol'}</div>
                                     <div className="text-black text-sm">👥 {selectedCar.seats || 5} Seats</div>
-                                    <div className="text-black text-sm">🎨 {selectedCar.color || 'Standard'}</div>
+                                    <div className="text-black text-sm">🗓️ Min. {selectedCar.min_booking_days || DEFAULT_MIN_DAYS} Days</div>
                                 </div>
                                 <button onClick={handleNext} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition shadow-lg">Confirm & Continue</button>
                                 <button onClick={() => setStep(1)} className="w-full mt-4 text-black text-sm hover:text-red-500 transition-colors flex items-center justify-center gap-2">
@@ -336,10 +345,13 @@ function BookingWizardContent() {
                                 <input value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} className="w-full p-3 border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-green-500 text-black font-medium" placeholder="Phone Number" />
                                 <input value={form.license} onChange={e => setForm({...form, license: e.target.value})} className="w-full md:col-span-2 p-3 border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-green-500 text-black font-medium" placeholder="License / ID Number" />
                             </div>
+                            
+                            {/* DYNAMIC MINIMUM NOTE */}
                             <div className="bg-blue-50 p-3 rounded-lg flex items-center gap-3 mb-2">
                                 <FaInfoCircle className="text-blue-600" />
-                                <p className="text-xs text-black font-bold uppercase">Note: Minimum hire duration is {MIN_RENTAL_DAYS} days</p>
+                                <p className="text-xs text-black font-bold uppercase">Note: Minimum hire duration for this vehicle is {pricing.minDays} days</p>
                             </div>
+
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="flex flex-col gap-1">
                                     <label className="text-[10px] font-bold text-black uppercase">Pickup Date</label>

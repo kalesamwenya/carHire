@@ -5,7 +5,8 @@ import { usePathname } from 'next/navigation';
 import { signOut } from 'next-auth/react';
 import { 
     FaTimes, FaHandshake, FaChartPie, FaBell, FaChartBar, 
-    FaCar, FaWallet, FaPlusCircle, FaCog, FaSignOutAlt 
+    FaCar, FaWallet, FaPlusCircle, FaCog, FaSignOutAlt, 
+    FaComment
 } from 'react-icons/fa';
 
 export default function PartnerSidebar({ user, isOpen, setIsOpen }) {
@@ -13,7 +14,7 @@ export default function PartnerSidebar({ user, isOpen, setIsOpen }) {
 
     const navigation = [
         { name: 'Dashboard', href: '/partner', icon: FaChartPie },
-        { name: 'Chat', href: '/partner/chat', icon: FaComments },
+        { name: 'Chat', href: '/partner/chat', icon: FaComment },
         { name: 'Notifications', href: '/partner/notifications', icon: FaBell },
         { name: 'Analytics', href: '/partner/analytics', icon: FaChartBar },
         { name: 'My Fleet', href: '/partner/fleet', icon: FaCar },
