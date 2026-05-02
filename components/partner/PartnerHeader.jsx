@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import { signOut } from 'next-auth/react';
 import { 
   FaBars, FaHandshake, FaExclamationTriangle, 
   FaClock, FaTimesCircle, FaChevronDown, FaUserCircle,
@@ -12,7 +13,7 @@ import ChatDropdown from './ChatDropdown';
 
 
 
-export default function PartnerHeader({ setIsOpen, kycStatus }) {
+export default function PartnerHeader({ setIsOpen, kycStatus, user }) {
     const [activeDropdown, setActiveDropdown] = useState(null); // 'profile', 'notifications', 'chat'
 
     // Close dropdowns when clicking outside
@@ -67,8 +68,8 @@ export default function PartnerHeader({ setIsOpen, kycStatus }) {
                             className="flex items-center gap-3 pl-2 pr-1 py-1 rounded-full hover:bg-gray-50 transition-all border border-transparent hover:border-gray-100"
                         >
                             <div className="flex flex-col items-end hidden md:flex text-right">
-                                <span className="text-sm font-semibold text-gray-800 leading-none">Emit Admin</span>
-                                <span className="text-[11px] text-green-600 font-bold uppercase tracking-tighter">Verified Partner</span>
+                                <span className="text-sm font-semibold text-gray-800 leading-none">{user?.name || 'Emit Admin'}</span>
+                                <span className="text-[11px] text-green-600 font-bold uppercase tracking-tighter">{user?.kyc_status || 'Not Verified'}</span>
                             </div>
                             <div className="relative">
                                 <FaUserCircle size={32} className="text-gray-300" />
@@ -85,7 +86,7 @@ export default function PartnerHeader({ setIsOpen, kycStatus }) {
                                 <Link href="/partner/settings" className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50 hover:text-green-600 transition-colors">
                                     <FaCog /> Settings
                                 </Link>
-                                <button className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-rose-600 hover:bg-rose-50 transition-colors">
+                                <button onClick={() => signOut({ callbackUrl: '/auth/signin' })} className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-rose-600 hover:bg-rose-50 transition-colors">
                                     <FaSignOutAlt /> Sign Out
                                 </button>
                             </div>

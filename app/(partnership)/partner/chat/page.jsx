@@ -3,10 +3,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import { 
   Send, User, Search, MoreHorizontal, 
-  Paperclip, Smile, Phone, Video, 
-  CheckCheck, Filter, Edit3, ChevronLeft, MessageSquare
+  Paperclip, Phone, CheckCheck, Filter, 
+  Edit3, ChevronLeft, MessageSquare
 } from 'lucide-react';
-
 
 const ProfessionalChat = () => {
   // --- STATE ---
@@ -17,33 +16,36 @@ const ProfessionalChat = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [showMobileChat, setShowMobileChat] = useState(false);
-   const { data: session, status } = useSession();
+  const { data: session } = useSession();
 
-     const partnerName = session?.user?.name;
-  
   const scrollRef = useRef(null);
-  const currentUser = { id: session?.user?.id, name: partnerName }; // Your Admin ID
   const BASE_API = "https://api.citydrivehire.com";
+  
+  // Logical Fix: Ensure currentUserId is treated as an integer for comparisons
+  const currentUserId = session?.user?.id ? parseInt(session.user.id) : null;
 
   // --- FETCH USER DIRECTORY ---
   useEffect(() => {
     const fetchDirectory = async () => {
       try {
-        const response = await fetch(`${BASE_API}/admin/users_list.php`);
+        const response = await fetch(`${BASE_API}/admin/user-list.php`);
         const result = await response.json();
         if (result.success) {
-          // Map DB fields to your UI structure
-          const formatted = result.data.map(u => ({
-            id: u.id,
-            name: u.role === 'partner' ? (u.business_name || u.name) : u.name,
-            lastMsg: "Click to view history", // Could be enhanced with a 'latest message' API
-            time: "Active",
-            status: 'online',
-            unread: 0,
-            image: u.image
-          }));
+          const formatted = result.data
+            // Logic Fix: Exclude self from the sidebar
+            .filter(u => parseInt(u.id) !== currentUserId)
+            .map(u => ({
+              id: u.id,
+              name: u.role === 'partner' ? (u.business_name || u.name) : u.name,
+              lastMsg: "Click to view history", 
+              time: "Active",
+              status: 'online',
+              unread: 0,
+              image: u.image
+            }));
           setChats(formatted);
-          if (formatted.length > 0) setActiveChat(formatted[0]);
+          // Only set default if one isn't already active
+          if (formatted.length > 0 && !activeChat) setActiveChat(formatted[0]);
         }
       } catch (error) {
         console.error("Directory fetch failed:", error);
@@ -51,30 +53,31 @@ const ProfessionalChat = () => {
         setIsLoading(false);
       }
     };
-    fetchDirectory();
-  }, []);
+    if (currentUserId) fetchDirectory();
+  }, [currentUserId]);
 
-  // --- FETCH MESSAGES FOR ACTIVE CHAT ---
-  useEffect(() => {
-    if (!activeChat) return;
-
-    const fetchHistory = async () => {
-      try {
-        const response = await fetch(
-          `${BASE_API}/messages/chat.php?sender_id=${currentUser.id}&recipient_id=${activeChat.id}`
-        );
-        const result = await response.json();
-        if (result.success) {
-          setMessages(result.data);
-        }
-      } catch (error) {
-        console.error("Chat history failed:", error);
+  // --- FETCH MESSAGES LOGIC ---
+  const fetchHistory = async () => {
+    if (!activeChat || !currentUserId) return;
+    try {
+      const response = await fetch(
+        `${BASE_API}/messages/chat.php?sender_id=${currentUserId}&recipient_id=${activeChat.id}`
+      );
+      const result = await response.json();
+      if (result.success) {
+        setMessages(result.data);
       }
-    };
+    } catch (error) {
+      console.error("Chat history failed:", error);
+    }
+  };
 
+  // Logic Fix: Polling for real-time visibility for both users
+  useEffect(() => {
     fetchHistory();
-    // Optional: Set up polling here for real-time feel
-  }, [activeChat]);
+    const interval = setInterval(fetchHistory, 4000); // Poll every 4 seconds
+    return () => clearInterval(interval);
+  }, [activeChat, currentUserId]);
 
   // --- SCROLL TO BOTTOM ---
   useEffect(() => {
@@ -88,17 +91,17 @@ const ProfessionalChat = () => {
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
-    if (!newMessage.trim() || !activeChat) return;
+    if (!newMessage.trim() || !activeChat || !currentUserId) return;
 
     const body = newMessage;
-    setNewMessage(""); // Clear input early for better UX
+    setNewMessage(""); 
 
     try {
       const response = await fetch(`${BASE_API}/messages/send.php`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          sender_id: currentUser.id,
+          sender_id: currentUserId,
           recipient_id: activeChat.id,
           body: body
         })
@@ -106,13 +109,8 @@ const ProfessionalChat = () => {
 
       const result = await response.json();
       if (result.success) {
-        // Optimistic update
-        setMessages(prev => [...prev, {
-          id: Date.now(),
-          sender_id: currentUser.id,
-          body: body,
-          created_at: new Date().toISOString()
-        }]);
+        // Immediate refresh after sending so the UI feels snappy
+        fetchHistory();
       }
     } catch (error) {
       console.error("Send failed:", error);
@@ -216,7 +214,8 @@ const ProfessionalChat = () => {
 
             <main className="flex-1 overflow-y-auto p-6 space-y-6 bg-slate-50/30">
               {messages.map((msg) => {
-                const isMe = parseInt(msg.sender_id) === currentUser.id;
+                // Logic Fix: Strictly compare as numbers
+                const isMe = parseInt(msg.sender_id) === currentUserId;
                 return (
                   <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'} animate-in fade-in slide-in-from-bottom-2`}>
                     <div className={`max-w-[75%] flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
@@ -226,7 +225,7 @@ const ProfessionalChat = () => {
                         {msg.body}
                       </div>
                       <div className="flex items-center gap-1.5 mt-1.5">
-                        <span className="text-[9px] text-slate-400 font-bold">
+                        <span className="text-[9px] text-slate-400 font-bold uppercase">
                            {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </span>
                         {isMe && <CheckCheck className="w-3 h-3 text-green-500" />}

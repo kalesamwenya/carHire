@@ -45,6 +45,7 @@ export default function PartnerLayoutClient({ user, children }) {
                 <PartnerHeader 
                     setIsOpen={setSidebarOpen} 
                     kycStatus={user?.kyc_status} 
+                    user={user}
                 />
 
                 <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 scroll-smooth">
@@ -53,7 +54,7 @@ export default function PartnerLayoutClient({ user, children }) {
             </div>
 
             {/* FLOATING CHAT BUBBLE */}
-            <AdminPartnerChat/>
+            <AdminPartnerChat user={user} />
         </div>
     );
 }

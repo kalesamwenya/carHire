@@ -3,18 +3,14 @@
 import { useState, useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 import { MessageSquare, X, Send, ArrowLeft, Search, Bell, BellOff, User } from "lucide-react";
-import { useSession } from "next-auth/react";
 
-export default function GlobalStaffChat() {
-  const { data: session, status } = useSession();
+export default function GlobalStaffChat({ user }) {
   const pathname = usePathname();
-  
   const [isOpen, setIsOpen] = useState(false);
   const [view, setView] = useState("list");
   const [activeChat, setActiveChat] = useState(null);
   
-  // Replace this with your actual session user ID
-  const [currentUser] = useState({ id: session?.user?.id, name: session?.user?.name, role: session?.user?.role }); 
+  const [currentUser] = useState({ id: user?.id, name: user?.name, role: user?.role }); 
   
   const [messageInput, setMessageInput] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
@@ -40,10 +36,8 @@ export default function GlobalStaffChat() {
         if (result.success) {
           const filtered = result.data
             .filter(u => 
-              // Rule 1: Only Admin and Partner roles
               (u.role === 'admin' || u.role === 'partner') && 
-              // Rule 2: Exclude the currently logged-in user
-              parseInt(u.id) !== currentUser.id
+              parseInt(u.id) !== parseInt(currentUser.id)
             )
             .map(u => ({
               id: u.id,
@@ -66,14 +60,12 @@ export default function GlobalStaffChat() {
     if (isOpen) fetchUsers();
   }, [isOpen, BASE_API, currentUser.id]);
 
-  // Auto-scroll to bottom of chat
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, view]);
-
-  // 2. Fetch Chat History
+  // 2. Optimized Fetch Chat History (Bidirectional)
   const fetchChatHistory = async (recipientId) => {
-    setIsLoadingMessages(true);
+    if (!recipientId || !currentUser.id) return;
+    
+    // Note: Ensure your PHP backend handles bidirectional fetching 
+    // i.e., WHERE (s=A AND r=B) OR (s=B AND r=A)
     try {
       const response = await fetch(`${BASE_API}/messages/chat.php?sender_id=${currentUser.id}&recipient_id=${recipientId}`);
       const result = await response.json();
@@ -87,7 +79,25 @@ export default function GlobalStaffChat() {
     }
   };
 
-  // 3. Send Message logic remains the same...
+  // 3. Real-time Refresh Polling
+  useEffect(() => {
+    let interval;
+    if (isOpen && view === "chat" && activeChat) {
+      // Refresh messages every 3 seconds while the chat is open
+      interval = setInterval(() => {
+        fetchChatHistory(activeChat.id);
+      }, 3000);
+    }
+    return () => clearInterval(interval);
+  }, [isOpen, view, activeChat]);
+
+  // Auto-scroll to bottom of chat
+  useEffect(() => {
+    if (messagesEndRef.current) {
+        messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messages]);
+
   const handleSend = async (e) => {
     e.preventDefault();
     if (!messageInput.trim() || !activeChat) return;
@@ -107,14 +117,8 @@ export default function GlobalStaffChat() {
 
       const result = await response.json();
       if (result.success) {
-        const newMsg = {
-          id: Date.now(),
-          sender_id: currentUser.id,
-          body: messageInput,
-          created_at: new Date().toISOString(),
-        };
-        setMessages((prev) => [...prev, newMsg]);
         setMessageInput("");
+        fetchChatHistory(activeChat.id); // Immediate refresh after sending
       }
     } catch (error) {
       console.error("Message send failed:", error);
@@ -124,6 +128,7 @@ export default function GlobalStaffChat() {
   const startChat = (user) => {
     setActiveChat({ id: user.id, name: user.displayName });
     setView("chat");
+    setIsLoadingMessages(true);
     fetchChatHistory(user.id);
   };
 
@@ -151,7 +156,7 @@ export default function GlobalStaffChat() {
                   {view === "list" ? "Staff Directory" : activeChat?.name}
                 </h3>
                 <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">
-                  {view === "list" ? "Internal Network" : "Connected"}
+                   {view === "list" ? "Internal Network" : "Live Chat"}
                 </p>
               </div>
             </div>
@@ -201,35 +206,36 @@ export default function GlobalStaffChat() {
                     </button>
                   ))
                 ) : (
-                  <div className="text-center py-20">
-                    <p className="text-xs text-slate-400 italic">No other staff members found.</p>
-                  </div>
+                  <div className="text-center py-20 text-slate-400 text-xs italic">No other staff found.</div>
                 )}
               </div>
             </div>
           ) : (
-            // Chat View remains identical to previous refined version...
             <div className="flex-1 flex flex-col bg-slate-50">
                <div className="flex-1 overflow-y-auto p-4 space-y-4">
                 {isLoadingMessages ? (
                   <div className="flex justify-center p-10 text-slate-400 text-[10px] uppercase font-bold tracking-widest animate-pulse">Syncing...</div>
-                ) : messages.map((msg) => {
-                  const isMe = parseInt(msg.sender_id) === currentUser.id;
-                  return (
-                    <div key={msg.id} className={`flex ${isMe ? "justify-end" : "justify-start"}`}>
-                      <div className={`flex flex-col ${isMe ? "items-end" : "items-start"} max-w-[85%]`}>
-                        <div className={`px-4 py-2.5 rounded-2xl text-sm shadow-sm leading-relaxed ${
-                          isMe ? "bg-green-600 text-white rounded-tr-none" : "bg-white border border-slate-200 text-slate-700 rounded-tl-none"
-                        }`}>
-                          {msg.body}
+                ) : messages.length > 0 ? (
+                  messages.map((msg) => {
+                    const isMe = parseInt(msg.sender_id) === parseInt(currentUser.id);
+                    return (
+                      <div key={msg.id} className={`flex ${isMe ? "justify-end" : "justify-start"}`}>
+                        <div className={`flex flex-col ${isMe ? "items-end" : "items-start"} max-w-[85%]`}>
+                          <div className={`px-4 py-2.5 rounded-2xl text-sm shadow-sm leading-relaxed ${
+                            isMe ? "bg-green-600 text-white rounded-tr-none" : "bg-white border border-slate-200 text-slate-700 rounded-tl-none"
+                          }`}>
+                            {msg.body}
+                          </div>
+                          <span className="text-[9px] mt-1 text-slate-400 font-bold uppercase">
+                            {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </span>
                         </div>
-                        <span className="text-[9px] mt-1 text-slate-400 font-bold uppercase">
-                          {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        </span>
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })
+                ) : (
+                  <div className="text-center py-20 text-[10px] text-slate-400 uppercase font-bold tracking-widest">No conversation yet</div>
+                )}
                 <div ref={messagesEndRef} />
               </div>
 
@@ -249,7 +255,6 @@ export default function GlobalStaffChat() {
         </div>
       )}
 
-      {/* Toggle Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
         className={`p-4 rounded-full shadow-2xl transition-all duration-300 hover:scale-105 active:scale-95 relative ${
