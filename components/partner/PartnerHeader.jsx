@@ -29,9 +29,18 @@ export default function PartnerHeader({ setIsOpen, kycStatus }) {
 
     return (
         <header className="sticky top-0 z-40 w-full flex flex-col bg-white/80 backdrop-blur-md border-b border-gray-100 shadow-sm">
-            <div className="h-16 flex items-right justify-end px-4 md:px-8">
+            <div className="h-16 flex items-center justify-between px-4 md:px-8">
                 
-
+                {/* Left Section: Branding */}
+                <div className="flex items-center gap-4">
+                    <button
+                        onClick={() => setIsOpen(true)}
+                        className="lg:hidden p-2 text-gray-500 hover:bg-gray-50 rounded-xl transition-colors"
+                    >
+                        <FaBars size={20} />
+                    </button>
+            
+                </div>
 
                 {/* Right Section: Actions & Profile */}
                 <div className="flex items-center gap-2 md:gap-5">
