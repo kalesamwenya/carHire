@@ -3,8 +3,10 @@
 import { useState, useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 import { MessageSquare, X, Send, ArrowLeft, Search, Bell, BellOff, User } from "lucide-react";
+import { useSession } from "next-auth/react";
 
 export default function GlobalStaffChat() {
+  const { data: session, status } = useSession();
   const pathname = usePathname();
   
   const [isOpen, setIsOpen] = useState(false);
@@ -12,7 +14,7 @@ export default function GlobalStaffChat() {
   const [activeChat, setActiveChat] = useState(null);
   
   // Replace this with your actual session user ID
-  const [currentUser] = useState({ id: 999, name: "Emit Admin", role: "admin" }); 
+  const [currentUser] = useState({ id: session?.user?.id, name: session?.user?.name, role: session?.user?.role }); 
   
   const [messageInput, setMessageInput] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
