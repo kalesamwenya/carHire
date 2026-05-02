@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
 import { useState, useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
-import { MessageSquare, X, Send, Hash, ArrowLeft, Search, Bell, BellOff, User, Layers } from "lucide-react";
+import { MessageSquare, X, Send, ArrowLeft, Search, Bell, BellOff, User } from "lucide-react";
 
 export default function GlobalStaffChat() {
   const pathname = usePathname();
@@ -10,40 +10,49 @@ export default function GlobalStaffChat() {
   const [isOpen, setIsOpen] = useState(false);
   const [view, setView] = useState("list");
   const [activeChat, setActiveChat] = useState(null);
-  const [currentUser] = useState({ id: 999, name: "Emit Admin", role: "Staff" });
+  
+  // Replace this with your actual session user ID
+  const [currentUser] = useState({ id: 999, name: "Emit Admin", role: "admin" }); 
+  
   const [messageInput, setMessageInput] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
-  const [unreadCount, setUnreadCount] = useState(3);
+  const [unreadCount, setUnreadCount] = useState(0);
   const [soundEnabled, setSoundEnabled] = useState(true);
   
-  // Dynamic Data States
   const [members, setMembers] = useState([]);
   const [messages, setMessages] = useState([]);
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
   const [isLoadingMembers, setIsLoadingMembers] = useState(true);
 
   const messagesEndRef = useRef(null);
-  const BASE_API = process.env.NEXT_PUBLIC_API_URL || "https://api.citydrivehire.com";
+  const BASE_API = "https://api.citydrivehire.com";
 
-  // 1. Fetch Users List from your admin endpoint
+  // 1. Fetch, Filter Roles, and Exclude Self
   useEffect(() => {
     const fetchUsers = async () => {
+      setIsLoadingMembers(true);
       try {
         const response = await fetch(`${BASE_API}/admin/user-list.php`);
         const result = await response.json();
         
         if (result.success) {
-          const formatted = result.data.map(u => ({
-            id: u.id,
-            name: u.name,
-            // If it's a partner, show business name, otherwise personal name
-            displayName: u.role === 'partner' ? (u.business_name || u.name) : u.name,
-            role: u.role,
-            image: u.image,
-            initials: u.name ? u.name.split(' ').map(n => n[0]).join('').toUpperCase() : "??",
-            status: 'online' // Mocked status for UI
-          }));
-          setMembers(formatted);
+          const filtered = result.data
+            .filter(u => 
+              // Rule 1: Only Admin and Partner roles
+              (u.role === 'admin' || u.role === 'partner') && 
+              // Rule 2: Exclude the currently logged-in user
+              parseInt(u.id) !== currentUser.id
+            )
+            .map(u => ({
+              id: u.id,
+              name: u.name,
+              displayName: u.role === 'partner' ? (u.business_name || u.name) : u.name,
+              role: u.role,
+              image: u.image,
+              initials: u.name ? u.name.split(' ').map(n => n[0]).join('').toUpperCase() : "??",
+              status: 'online'
+            }));
+          setMembers(filtered);
         }
       } catch (error) {
         console.error("User list fetch failed:", error);
@@ -53,9 +62,9 @@ export default function GlobalStaffChat() {
     };
 
     if (isOpen) fetchUsers();
-  }, [isOpen, BASE_API]);
+  }, [isOpen, BASE_API, currentUser.id]);
 
-  // Auto-scroll to bottom
+  // Auto-scroll to bottom of chat
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, view]);
@@ -76,7 +85,7 @@ export default function GlobalStaffChat() {
     }
   };
 
-  // 3. Send Message
+  // 3. Send Message logic remains the same...
   const handleSend = async (e) => {
     e.preventDefault();
     if (!messageInput.trim() || !activeChat) return;
@@ -113,16 +122,14 @@ export default function GlobalStaffChat() {
   const startChat = (user) => {
     setActiveChat({ id: user.id, name: user.displayName });
     setView("chat");
-    setUnreadCount(0);
     fetchChatHistory(user.id);
   };
 
   const isHiddenRoute = pathname === "/partner/chat" || pathname === "/admin/chat";
   if (isHiddenRoute) return null;
 
-  const filteredMembers = members.filter(m => 
-    m.displayName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    m.role.toLowerCase().includes(searchTerm.toLowerCase())
+  const displayedMembers = members.filter(m => 
+    m.displayName.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -138,11 +145,11 @@ export default function GlobalStaffChat() {
                 </button>
               )}
               <div>
-                <h3 className="font-bold text-base leading-tight">
-                  {view === "list" ? "Staff Network" : activeChat?.name}
+                <h3 className="font-bold text-sm leading-tight truncate max-w-[180px]">
+                  {view === "list" ? "Staff Directory" : activeChat?.name}
                 </h3>
-                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
-                  {view === "list" ? "Directory" : "Active Session"}
+                <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">
+                  {view === "list" ? "Internal Network" : "Connected"}
                 </p>
               </div>
             </div>
@@ -152,66 +159,69 @@ export default function GlobalStaffChat() {
           </header>
 
           {view === "list" ? (
-            <div className="flex-1 flex flex-col bg-slate-50/50">
+            <div className="flex-1 flex flex-col bg-slate-50/30">
               <div className="p-4">
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
                   <input
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full bg-white border border-slate-200 rounded-2xl pl-10 pr-4 py-2.5 text-sm focus:ring-2 focus:ring-orange-500 outline-none shadow-sm"
-                    placeholder="Search name or role..."
+                    className="w-full bg-white border border-slate-200 rounded-xl pl-9 pr-4 py-2 text-sm focus:ring-2 focus:ring-green-500 outline-none"
+                    placeholder="Search people..."
                   />
                 </div>
               </div>
 
-              <div className="flex-1 overflow-y-auto px-4 pb-4">
-                <h4 className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2 px-2 flex items-center gap-2">
-                  <User size={12} /> Direct Messages
-                </h4>
-                
+              <div className="flex-1 overflow-y-auto px-4 pb-4 scrollbar-hide">
                 {isLoadingMembers ? (
-                  <div className="flex justify-center p-8 text-slate-400 text-xs animate-pulse">Syncing Network...</div>
-                ) : filteredMembers.map((m) => (
-                  <button
-                    key={m.id}
-                    onClick={() => startChat(m)}
-                    className="w-full p-3 mb-1 rounded-2xl hover:bg-white hover:shadow-md transition-all flex items-center gap-3 group text-left"
-                  >
-                    <div className="relative">
-                      {m.image ? (
-                        <img src={`${BASE_API}/uploads/${m.image}`} className="w-10 h-10 rounded-xl object-cover" alt="" />
-                      ) : (
-                        <div className="w-10 h-10 bg-slate-200 rounded-xl flex items-center justify-center text-xs font-bold text-slate-500">
-                          {m.initials}
-                        </div>
-                      )}
-                      <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-green-500 border-2 border-white rounded-full"></div>
-                    </div>
-                    <div>
-                        <span className="font-semibold block text-slate-700 text-sm leading-tight">{m.displayName}</span>
-                        <span className="text-[10px] text-slate-400 capitalize">{m.role}</span>
-                    </div>
-                  </button>
-                ))}
+                  <div className="flex justify-center p-10 animate-pulse text-[10px] text-slate-400 font-bold uppercase">Refreshing...</div>
+                ) : displayedMembers.length > 0 ? (
+                  displayedMembers.map((m) => (
+                    <button
+                      key={m.id}
+                      onClick={() => startChat(m)}
+                      className="w-full p-3 mb-1 rounded-2xl hover:bg-white hover:shadow-sm transition-all flex items-center gap-3 group text-left border border-transparent hover:border-slate-100"
+                    >
+                      <div className="relative">
+                        {m.image ? (
+                          <img src={`${BASE_API}/uploads/${m.image}`} className="w-10 h-10 rounded-xl object-cover" alt="" />
+                        ) : (
+                          <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center text-xs font-bold text-slate-400 group-hover:bg-green-50 group-hover:text-green-600">
+                            {m.initials}
+                          </div>
+                        )}
+                        <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-bold text-slate-800 text-sm truncate leading-tight group-hover:text-green-700">{m.displayName}</p>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">{m.role}</p>
+                      </div>
+                    </button>
+                  ))
+                ) : (
+                  <div className="text-center py-20">
+                    <p className="text-xs text-slate-400 italic">No other staff members found.</p>
+                  </div>
+                )}
               </div>
             </div>
           ) : (
+            // Chat View remains identical to previous refined version...
             <div className="flex-1 flex flex-col bg-slate-50">
-              <div className="flex-1 overflow-y-auto p-4 space-y-4">
+               <div className="flex-1 overflow-y-auto p-4 space-y-4">
                 {isLoadingMessages ? (
-                  <div className="flex justify-center p-10 text-slate-400 text-xs uppercase font-bold tracking-widest">Loading...</div>
+                  <div className="flex justify-center p-10 text-slate-400 text-[10px] uppercase font-bold tracking-widest animate-pulse">Syncing...</div>
                 ) : messages.map((msg) => {
                   const isMe = parseInt(msg.sender_id) === currentUser.id;
                   return (
                     <div key={msg.id} className={`flex ${isMe ? "justify-end" : "justify-start"}`}>
-                      <div className={`flex flex-col ${isMe ? "items-end" : "items-start"} max-w-[80%]`}>
-                        <div className={`px-4 py-2.5 rounded-2xl text-sm shadow-sm ${
-                          isMe ? "bg-orange-600 text-white rounded-tr-none" : "bg-white border border-slate-200 text-slate-700 rounded-tl-none"
+                      <div className={`flex flex-col ${isMe ? "items-end" : "items-start"} max-w-[85%]`}>
+                        <div className={`px-4 py-2.5 rounded-2xl text-sm shadow-sm leading-relaxed ${
+                          isMe ? "bg-green-600 text-white rounded-tr-none" : "bg-white border border-slate-200 text-slate-700 rounded-tl-none"
                         }`}>
                           {msg.body}
                         </div>
-                        <span className="text-[9px] mt-1 text-slate-400 font-medium">
+                        <span className="text-[9px] mt-1 text-slate-400 font-bold uppercase">
                           {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </span>
                       </div>
@@ -225,11 +235,11 @@ export default function GlobalStaffChat() {
                 <input
                   value={messageInput}
                   onChange={(e) => setMessageInput(e.target.value)}
-                  className="flex-1 bg-slate-100 rounded-2xl px-4 py-3 text-sm focus:ring-2 focus:ring-orange-600 outline-none"
+                  className="flex-1 bg-slate-50 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-green-600 outline-none border border-slate-100"
                   placeholder="Type a message..."
                 />
-                <button type="submit" className="bg-orange-600 text-white p-3 rounded-2xl shadow-lg hover:scale-105 active:scale-95 transition-all">
-                  <Send size={20} />
+                <button type="submit" className="bg-green-600 text-white p-2.5 rounded-xl shadow-lg hover:bg-green-700 active:scale-95 transition-all">
+                  <Send size={18} />
                 </button>
               </form>
             </div>
@@ -237,18 +247,14 @@ export default function GlobalStaffChat() {
         </div>
       )}
 
+      {/* Toggle Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className={`p-4 rounded-full shadow-2xl transition-all duration-300 hover:scale-110 active:scale-95 relative ${
-          isOpen ? "bg-slate-800 text-white" : "bg-green-600 text-white"
+        className={`p-4 rounded-full shadow-2xl transition-all duration-300 hover:scale-105 active:scale-95 relative ${
+          isOpen ? "bg-slate-900 text-white" : "bg-green-600 text-white"
         }`}
       >
-        {isOpen ? <X size={28} /> : <MessageSquare size={28} />}
-        {unreadCount > 0 && !isOpen && (
-          <span className="absolute -top-1 -right-1 bg-red-600 text-white text-[11px] font-bold rounded-full w-6 h-6 flex items-center justify-center border-2 border-white shadow-lg">
-            {unreadCount}
-          </span>
-        )}
+        {isOpen ? <X size={24} /> : <MessageSquare size={24} />}
       </button>
     </div>
   );
