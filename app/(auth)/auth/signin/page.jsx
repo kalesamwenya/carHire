@@ -141,7 +141,7 @@ function LoginContent() {
                     <AuthShell title="Welcome Back" subtitle="Secure member login">
                         <form onSubmit={onSubmit} className="space-y-6 mt-8">
                             <div className="space-y-1.5">
-                                <label className="text-sm font-bold text-gray-700">Email</label>
+                                <label className="text-sm font-bold text-green-700">Email</label>
                                 <input
                                     type="email"
                                     value={form.email}
@@ -154,7 +154,7 @@ function LoginContent() {
 
                             <div className="space-y-1.5">
                                 <div className="flex justify-between items-center">
-                                    <label className="text-sm font-bold text-gray-700">Password</label>
+                                    <label className="text-sm font-bold text-green-700">Password</label>
                                 </div>
                                 <div className="relative">
                                     <input

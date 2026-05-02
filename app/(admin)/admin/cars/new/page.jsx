@@ -143,23 +143,23 @@ export default function AddCarPage() {
                         </h2>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="md:col-span-2">
-                                <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Display Name</label>
+                                <label className="block text-xs font-bold text-green-500 uppercase mb-2">Display Name</label>
                                 <input name="name" value={formData.name} onChange={handleChange} required placeholder="Example: Luxury Toyota Hilux 2024" className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-green-500 outline-none" />
                             </div>
                             <div>
-                                <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Make</label>
+                                <label className="block text-xs font-bold text-green-500 uppercase mb-2">Make</label>
                                 <input name="make" value={formData.make} onChange={handleChange} required placeholder="Toyota" className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-green-500 outline-none" />
                             </div>
                             <div>
-                                <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Model</label>
+                                <label className="block text-xs font-bold text-green-500 uppercase mb-2">Model</label>
                                 <input name="model" value={formData.model} onChange={handleChange} required placeholder="Hilux" className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-green-500 outline-none" />
                             </div>
                             <div>
-                                <label className="block text-xs font-bold text-gray-500 uppercase mb-2">License Plate</label>
+                                <label className="block text-xs font-bold text-green-500 uppercase mb-2">License Plate</label>
                                 <input name="plate_number" value={formData.plate_number} onChange={handleChange} required placeholder="ABC 1234" className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-green-500 outline-none uppercase font-mono" />
                             </div>
                             <div>
-                                <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Category</label>
+                                <label className="block text-xs font-bold text-green-500 uppercase mb-2">Category</label>
                                 <div className="relative">
                                     <FaTag className="absolute left-3 top-3.5 text-gray-400" />
                                     <select 
@@ -190,15 +190,15 @@ export default function AddCarPage() {
                         </h2>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                             <div>
-                                <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Transmission</label>
-                                <select name="transmission" value={formData.transmission} onChange={handleChange} className="w-full border border-gray-300 rounded-lg p-3 text-sm bg-white outline-none">
+                                <label className="block text-xs font-bold text-green-500 uppercase mb-2">Transmission</label>
+                                <select name="transmission" value={formData.transmission} onChange={handleChange} className="w-full border border-gray-300 rounded-lg p-3 text-sm text-black bg-white outline-none">
                                     <option value="Automatic">Automatic</option>
                                     <option value="Manual">Manual</option>
                                 </select>
                             </div>
                             <div>
-                                <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Fuel Type</label>
-                                <select name="fuel_type" value={formData.fuel_type} onChange={handleChange} className="w-full border border-gray-300 rounded-lg p-3 text-sm bg-white outline-none">
+                                <label className="block text-xs font-bold text-green-500 uppercase mb-2">Fuel Type</label>
+                                <select name="fuel_type" value={formData.fuel_type} onChange={handleChange} className="w-full border border-gray-300 rounded-lg p-3 text-sm text-black bg-white outline-none">
                                     <option value="Diesel">Diesel</option>
                                     <option value="Petrol">Petrol</option>
                                     <option value="Hybrid">Hybrid</option>
@@ -206,23 +206,23 @@ export default function AddCarPage() {
                                 </select>
                             </div>
                             <div>
-                                <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Mileage (km)</label>
+                                <label className="block text-xs font-bold text-green-500 uppercase mb-2">Mileage (km)</label>
                                 <div className="relative">
-                                    <FaRoad className="absolute left-3 top-3.5 text-gray-400" />
-                                    <input name="mileage" type="number" value={formData.mileage} onChange={handleChange} placeholder="0" className="w-full border border-gray-300 rounded-lg p-3 pl-10 text-sm outline-none" />
+                                    <FaRoad className="absolute left-3 top-3.5 text-green-500" />
+                                    <input name="mileage" type="number" value={formData.mileage} onChange={handleChange} placeholder="0" className="w-full border border-gray-300 rounded-lg p-3 pl-10 text-sm text-black outline-none" />
                                 </div>
                             </div>
                             <div>
-                                <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Seats</label>
-                                <input name="seats" type="number" value={formData.seats} onChange={handleChange} className="w-full border border-gray-300 rounded-lg p-3 text-sm outline-none" />
+                                <label className="block text-xs font-bold text-green-500 uppercase mb-2">Seats</label>
+                                <input name="seats" type="number" value={formData.seats} onChange={handleChange} className="w-full border border-gray-300 rounded-lg p-3 text-sm text-black outline-none" />
                             </div>
                             <div>
-                                <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Color</label>
-                                <input name="color" value={formData.color} onChange={handleChange} placeholder="White" className="w-full border border-gray-300 rounded-lg p-3 text-sm outline-none" />
+                                <label className="block text-xs font-bold text-green-500 uppercase mb-2">Color</label>
+                                <input name="color" value={formData.color} onChange={handleChange} placeholder="White" className="w-full border border-gray-300 rounded-lg p-3 text-sm text-black outline-none" />
                             </div>
                             <div className="md:col-span-3">
-                                <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Description</label>
-                                <textarea name="description" value={formData.description} onChange={handleChange} rows="4" className="w-full border border-gray-300 rounded-lg p-3 text-sm outline-none resize-none" placeholder="Enter vehicle features..."></textarea>
+                                <label className="block text-xs font-bold text-green-500 uppercase mb-2">Description</label>
+                                <textarea name="description" value={formData.description} onChange={handleChange} rows="4" className="w-full border border-gray-300 rounded-lg p-3 text-sm text-black outline-none resize-none" placeholder="Enter vehicle features..."></textarea>
                             </div>
                         </div>
                     </div>
@@ -236,17 +236,17 @@ export default function AddCarPage() {
                         </h2>
                         <div className="space-y-4">
                             <div>
-                                <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Daily Rate ($)</label>
+                                <label className="block text-xs font-bold text-green-500 uppercase mb-2">Daily Rate ($)</label>
                                 <div className="relative">
-                                    <span className="absolute left-3 top-3 text-gray-500 font-bold">$</span>
-                                    <input name="daily_rate" type="number" onChange={handleChange} required className="w-full border border-gray-300 rounded-lg p-3 pl-8 text-sm outline-none font-bold text-lg" />
+                                    <span className="absolute left-3 top-3 text-green-500 font-bold">$</span>
+                                    <input name="daily_rate" type="number" onChange={handleChange} required className="w-full border border-gray-300 rounded-lg p-3 pl-8 text-sm text-black outline-none font-bold text-lg" />
                                 </div>
                             </div>
                             <div>
-                                <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Min. Booking Days</label>
+                                <label className="block text-xs font-bold text-green-500 uppercase mb-2">Min. Booking Days</label>
                                 <div className="relative">
-                                    <FaCalendarDay className="absolute left-3 top-3.5 text-gray-400" />
-                                    <input name="min_days" type="number" min="1" defaultValue="1" onChange={handleChange} required className="w-full border border-gray-300 rounded-lg p-3 pl-10 text-sm outline-none font-bold" />
+                                    <FaCalendarDay className="absolute left-3 top-3.5 text-green-500" />
+                                    <input name="min_days" type="number" min="1" defaultValue="1" onChange={handleChange} required className="w-full border border-gray-300 rounded-lg p-3 pl-10 text-sm text-black outline-none font-bold" />
                                 </div>
                             </div>
                         </div>
