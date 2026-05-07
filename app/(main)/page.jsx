@@ -11,7 +11,7 @@ async function getFeaturedCars() {
     try {
         const baseUrl = process.env.NEXT_PUBLIC_API_URL || "https://api.citydrivehire.com";
         // In production, ensure your BASE_URL is set correctly in Vercel env vars
-        const res = await fetch(`${baseUrl}/cars?limit=3&featured=true`, { 
+        const res = await fetch(`${baseUrl}/admin/get_cars.php`, { 
             cache: 'no-store' 
         });
         

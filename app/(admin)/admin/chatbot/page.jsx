@@ -24,11 +24,11 @@ export default function ChatbotStatsPage() {
   const [error, setError] = useState("");
 
   const brand = {
-    primary: 'bg-emerald-700',
-    accent: 'text-emerald-700',
-    bgLight: 'bg-emerald-50',
-    border: 'border-emerald-100',
-    gradient: 'from-emerald-700 to-emerald-900',
+    primary: 'bg-brand-700',
+    accent: 'text-brand-700',
+    bgLight: 'bg-brand-50',
+    border: 'border-brand-100',
+    gradient: 'from-brand-700 to-brand-900',
   };
 
   useEffect(() => {
@@ -205,7 +205,7 @@ export default function ChatbotStatsPage() {
         )}
 
         <footer className="mt-12 pt-8 border-t border-gray-100 text-center">
-          <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">CityDrive Data Systems • Confidential Admin Access</p>
+          <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Life Reach Church Data Systems • Confidential Admin Access</p>
         </footer>
       </div>
     </div>

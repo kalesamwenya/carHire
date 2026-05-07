@@ -26,7 +26,7 @@ export default function PartnerFleetPage() {
 
     const Public_Api = "https://api.citydrivehire.com";
 
-    const partnerId = session?.user?.partner_id;
+   const partnerId = session?.user?.id;
 
 
     // 2. Fetch Data with Error Handling
@@ -43,7 +43,7 @@ export default function PartnerFleetPage() {
             }
 
             try {
-                const res = await fetch(`${Public_Api}/partners/get-fleet.php?user_id=${partnerId}`);
+                const res = await fetch(`${Public_Api}/partners/get-fleet.php?user_id=${encodeURIComponent(partnerId)}`);
                 
                 // Catch 500 or other non-200 responses
                 if (!res.ok) {

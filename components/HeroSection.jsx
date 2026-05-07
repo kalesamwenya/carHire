@@ -1,21 +1,40 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import axios from 'axios';
 import { useRouter } from 'next/navigation';
 import { FaSearch, FaMapMarkerAlt, FaCalendarAlt, FaCheckCircle, FaStar, FaArrowRight } from 'react-icons/fa';
 import { motion } from 'framer-motion';
 
 export default function HeroSection() {
+    const [advert, setAdvert] = useState(null);
+
     const router = useRouter();
     const [location, setLocation] = useState('');
     const [pickup, setPickup] = useState('');
     const [dropoff, setDropoff] = useState('');
+
+    const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://api.citydrivehire.com';
 
     const handleSearch = (e) => {
         e.preventDefault();
         const params = new URLSearchParams({ location, pickup, dropoff });
         router.push(`/search?${params.toString()}`);
     };
+
+    useEffect(() => {
+    const fetchAdvert = async () => {
+        try {
+            const res = await axios.get(`${API_BASE}/cars/get-advertised.php`);
+            if (res.data.success) {
+                setAdvert(res.data.data);
+            }
+        } catch (err) {
+            console.error("Failed to load advert", err);
+        }
+    };
+    fetchAdvert();
+}, []);
 
     return (
         <section className="relative bg-white overflow-hidden pt-28 pb-20 lg:pt-36 lg:pb-28">
@@ -121,10 +140,10 @@ export default function HeroSection() {
                         {/* Placeholder for Car Image */}
                         <div className="aspect-[4/3] relative">
                             <img
-                                src="https://images.unsplash.com/photo-1617788138017-80ad40651399?q=80&w=2070" // High quality placeholder
-                                alt="Luxury SUV"
-                                className="w-full h-full object-cover transform hover:scale-105 transition-transform duration-700"
-                            />
+                src={advert ? `${API_BASE}/${advert.image}` : "https://images.unsplash.com/photo-1617788138017-80ad40651399?q=80&w=2070"} 
+                alt={advert?.name || "Luxury Car"}
+                className="w-full h-full object-cover transform hover:scale-105 transition-transform duration-700"
+            />
                             <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
                         </div>
 
@@ -136,7 +155,7 @@ export default function HeroSection() {
                             className="absolute bottom-6 left-6 right-6 backdrop-blur-md bg-white/90 border border-white/50 p-5 rounded-2xl shadow-lg flex items-center justify-between"
                         >
                             <div>
-                                <h3 className="font-bold text-slate-900 text-lg">Toyota Hilux 4x4</h3>
+                                <h3 className="font-bold text-slate-900 text-lg">{advert ? advert.name : "Select a Vehicle"}</h3>
                                 <div className="flex items-center text-yellow-500 text-xs mt-1 gap-1">
                                     <FaStar /><FaStar /><FaStar /><FaStar /><FaStar />
                                     <span className="text-slate-500 font-medium ml-1">(42 trips)</span>
@@ -144,7 +163,7 @@ export default function HeroSection() {
                             </div>
                             <div className="text-right">
                                 <p className="text-[10px] uppercase font-bold text-slate-500">Starting from</p>
-                                <p className="text-green-600 font-extrabold text-xl">ZMW 1,500<span className="text-xs text-slate-400 font-normal">/day</span></p>
+                                <p className="text-green-600 font-extrabold text-xl">ZMW {advert ? advert.price.toLocaleString() : "0"}<span className="text-xs text-slate-400 font-normal">/day</span></p>
                             </div>
                         </motion.div>
                     </div>

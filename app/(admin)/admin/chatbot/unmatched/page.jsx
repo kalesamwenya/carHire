@@ -21,10 +21,10 @@ export default function ChatbotUnmatchedAdmin() {
   const [error, setError] = useState("");
 
   const brand = {
-    primary: 'bg-emerald-700',
-    accent: 'text-emerald-700',
-    bgLight: 'bg-emerald-50',
-    border: 'border-emerald-100',
+    primary: 'bg-brand-700',
+    accent: 'text-brand-700',
+    bgLight: 'bg-brand-50',
+    border: 'border-brand-100',
   };
 
   const fetchLogs = async () => {
@@ -142,7 +142,7 @@ export default function ChatbotUnmatchedAdmin() {
         </div>
         
         <footer className="mt-8 text-center">
-          <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">CityDrive Intelligence v2.0</p>
+          <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Life Reach Church Intelligence v1.0</p>
         </footer>
       </div>
     </div>

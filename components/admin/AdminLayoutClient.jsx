@@ -1,16 +1,12 @@
 'use client';
-
 import { useState } from 'react';
-
 import AdminHeader from './AdminHeader';
 import AdminSidebar from './AdminSidebar';
 import AdminPartnerChat from '../ui/AdminPartnerChat';
 
-
 export default function AdminLayoutClient({ user, children }) {
     const [sidebarOpen, setSidebarOpen] = useState(false);
-    const [showChat, setShowChat] = useState(false);
-    const demoPartner = { id: 2, name: 'Partner Demo', role: 'partner' };
+
     return (
         <div className="flex h-screen bg-slate-50 overflow-hidden">
             {/* MOBILE OVERLAY */}
@@ -21,18 +17,18 @@ export default function AdminLayoutClient({ user, children }) {
                 ></div>
             )}
 
-            {/* SIDEBAR */}
             <AdminSidebar isOpen={sidebarOpen} setIsOpen={setSidebarOpen} />
 
-            {/* MAIN CONTENT AREA */}
             <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-                {/* Header (Mobile + Desktop) */}
                 <AdminHeader user={user} onMenuClick={() => setSidebarOpen(true)} />
 
-                {/* Viewport */}
                 <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-10 bg-slate-50">
                     {children}
-                    <AdminPartnerChat/>
+                    
+                    {/* CRITICAL FIX: Pass the user prop here */}
+                    {user && user.id && (
+                        <AdminPartnerChat user={user} />
+                    )}
                 </main>
             </div>
         </div>

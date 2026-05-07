@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
-import { MessageSquare, X, Send, ArrowLeft, Search, Bell, BellOff, User } from "lucide-react";
+import { MessageSquare, X, Send, ArrowLeft, Search, Bell, BellOff } from "lucide-react";
 
 export default function GlobalStaffChat({ user }) {
   const pathname = usePathname();
@@ -10,24 +10,78 @@ export default function GlobalStaffChat({ user }) {
   const [view, setView] = useState("list");
   const [activeChat, setActiveChat] = useState(null);
   
-  const [currentUser] = useState({ id: user?.id, name: user?.name, role: user?.role }); 
-  
+  // Use a ref for messages to check length inside intervals without triggering re-renders
+  const [messages, setMessages] = useState([]);
+  const messagesRef = useRef([]);
+
+  const [currentUser, setCurrentUser] = useState({ 
+    id: user?.id || user?.admin_id || user?.pk ? Number(user.id || user.admin_id || user.pk) : null, 
+    name: user?.name || "Staff", 
+    role: user?.role 
+  });
+
+  // Keep internal ref in sync with state
+  useEffect(() => {
+    messagesRef.current = messages;
+  }, [messages]);
+
+  // Update currentUser if the prop changes (e.g., session loads late)
+  useEffect(() => {
+    if (user) {
+      setCurrentUser({
+        id: Number(user.id || user.admin_id || user.pk),
+        name: user.name || "Staff",
+        role: user.role
+      });
+    }
+  }, [user]);
+
   const [messageInput, setMessageInput] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
-  const [unreadCount, setUnreadCount] = useState(0);
   const [soundEnabled, setSoundEnabled] = useState(true);
   
   const [members, setMembers] = useState([]);
-  const [messages, setMessages] = useState([]);
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
   const [isLoadingMembers, setIsLoadingMembers] = useState(true);
 
   const messagesEndRef = useRef(null);
   const BASE_API = "https://api.citydrivehire.com";
 
-  // 1. Fetch, Filter Roles, and Exclude Self
+  const playNotification = () => {
+    if (soundEnabled) {
+      const audio = new Audio('/sounds/notification.mp3');
+      audio.play().catch(() => {}); 
+    }
+  };
+
+  const fetchChatHistory = async (recipientId) => {
+    if (!recipientId || !currentUser.id) return;
+    
+    try {
+      const response = await fetch(`${BASE_API}/messages/chat.php?sender_id=${currentUser.id}&recipient_id=${recipientId}`);
+      const result = await response.json();
+      
+      if (result.success) {
+        // Sound logic: Compare new data length with our ref
+        if (messagesRef.current.length > 0 && result.data.length > messagesRef.current.length) {
+          const lastMsg = result.data[result.data.length - 1];
+          if (Number(lastMsg.sender_id) !== currentUser.id) {
+            playNotification();
+          }
+        }
+        setMessages(result.data);
+      }
+    } catch (error) {
+      console.error("Failed to fetch chat:", error);
+    } finally {
+      setIsLoadingMessages(false);
+    }
+  };
+
+  // Fetch Directory
   useEffect(() => {
     const fetchUsers = async () => {
+      if (!currentUser.id) return;
       setIsLoadingMembers(true);
       try {
         const response = await fetch(`${BASE_API}/admin/user-list.php`);
@@ -37,16 +91,14 @@ export default function GlobalStaffChat({ user }) {
           const filtered = result.data
             .filter(u => 
               (u.role === 'admin' || u.role === 'partner') && 
-              parseInt(u.id) !== parseInt(currentUser.id)
+              Number(u.id) !== currentUser.id
             )
             .map(u => ({
               id: u.id,
-              name: u.name,
               displayName: u.role === 'partner' ? (u.business_name || u.name) : u.name,
               role: u.role,
               image: u.image,
-              initials: u.name ? u.name.split(' ').map(n => n[0]).join('').toUpperCase() : "??",
-              status: 'online'
+              initials: u.name ? u.name.split(' ').map(n => n[0]).join('').toUpperCase() : "??"
             }));
           setMembers(filtered);
         }
@@ -58,49 +110,22 @@ export default function GlobalStaffChat({ user }) {
     };
 
     if (isOpen) fetchUsers();
-  }, [isOpen, BASE_API, currentUser.id]);
+  }, [isOpen, currentUser.id]);
 
-  // 2. Optimized Fetch Chat History (Bidirectional)
-  const fetchChatHistory = async (recipientId) => {
-    if (!recipientId || !currentUser.id) return;
-    
-    // Note: Ensure your PHP backend handles bidirectional fetching 
-    // i.e., WHERE (s=A AND r=B) OR (s=B AND r=A)
-    try {
-      const response = await fetch(`${BASE_API}/messages/chat.php?sender_id=${currentUser.id}&recipient_id=${recipientId}`);
-      const result = await response.json();
-      if (result.success) {
-        setMessages(result.data);
-      }
-    } catch (error) {
-      console.error("Failed to fetch chat:", error);
-    } finally {
-      setIsLoadingMessages(false);
-    }
-  };
-
-  // 3. Real-time Refresh Polling
+  // Single Polling Source
   useEffect(() => {
     let interval;
-    if (isOpen && view === "chat" && activeChat) {
-      // Refresh messages every 3 seconds while the chat is open
+    if (isOpen && view === "chat" && activeChat?.id) {
       interval = setInterval(() => {
         fetchChatHistory(activeChat.id);
-      }, 3000);
+      }, 4000);
     }
     return () => clearInterval(interval);
-  }, [isOpen, view, activeChat]);
-
-  // Auto-scroll to bottom of chat
-  useEffect(() => {
-    if (messagesEndRef.current) {
-        messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
-    }
-  }, [messages]);
+  }, [isOpen, view, activeChat?.id, currentUser.id]);
 
   const handleSend = async (e) => {
     e.preventDefault();
-    if (!messageInput.trim() || !activeChat) return;
+    if (!messageInput.trim() || !activeChat || !currentUser.id) return;
 
     const payload = {
       sender_id: currentUser.id,
@@ -109,7 +134,7 @@ export default function GlobalStaffChat({ user }) {
     };
 
     try {
-      const response = await fetch(`${BASE_API}/messages/send.php`, {
+      const response = await fetch(`${BASE_API}/messages/chat.php`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -118,22 +143,27 @@ export default function GlobalStaffChat({ user }) {
       const result = await response.json();
       if (result.success) {
         setMessageInput("");
-        fetchChatHistory(activeChat.id); // Immediate refresh after sending
+        fetchChatHistory(activeChat.id); 
       }
     } catch (error) {
       console.error("Message send failed:", error);
     }
   };
 
-  const startChat = (user) => {
-    setActiveChat({ id: user.id, name: user.displayName });
+  const startChat = (targetUser) => {
+    setActiveChat({ id: targetUser.id, name: targetUser.displayName });
     setView("chat");
     setIsLoadingMessages(true);
-    fetchChatHistory(user.id);
+    fetchChatHistory(targetUser.id);
   };
 
-  const isHiddenRoute = pathname === "/partner/chat" || pathname === "/admin/chat";
-  if (isHiddenRoute) return null;
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messages]);
+
+  if (pathname === "/partner/chat" || pathname === "/admin/chat") return null;
 
   const displayedMembers = members.filter(m => 
     m.displayName.toLowerCase().includes(searchTerm.toLowerCase())
@@ -173,15 +203,15 @@ export default function GlobalStaffChat({ user }) {
                   <input
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full bg-white border border-slate-200 rounded-xl pl-9 pr-4 py-2 text-sm focus:ring-2 focus:ring-green-500 outline-none"
-                    placeholder="Search people..."
+                    className="w-full bg-white border border-slate-200 rounded-xl pl-9 pr-4 py-2 text-sm outline-none focus:ring-2 focus:ring-green-500"
+                    placeholder="Search staff..."
                   />
                 </div>
               </div>
 
-              <div className="flex-1 overflow-y-auto px-4 pb-4 scrollbar-hide">
+              <div className="flex-1 overflow-y-auto px-4 pb-4">
                 {isLoadingMembers ? (
-                  <div className="flex justify-center p-10 animate-pulse text-[10px] text-slate-400 font-bold uppercase">Refreshing...</div>
+                  <div className="flex justify-center p-10 text-[10px] text-slate-400 uppercase font-bold animate-pulse">Syncing Staff...</div>
                 ) : displayedMembers.length > 0 ? (
                   displayedMembers.map((m) => (
                     <button
@@ -200,7 +230,7 @@ export default function GlobalStaffChat({ user }) {
                         <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-bold text-slate-800 text-sm truncate leading-tight group-hover:text-green-700">{m.displayName}</p>
+                        <p className="font-bold text-slate-800 text-sm truncate group-hover:text-green-700">{m.displayName}</p>
                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">{m.role}</p>
                       </div>
                     </button>
@@ -214,10 +244,10 @@ export default function GlobalStaffChat({ user }) {
             <div className="flex-1 flex flex-col bg-slate-50">
                <div className="flex-1 overflow-y-auto p-4 space-y-4">
                 {isLoadingMessages ? (
-                  <div className="flex justify-center p-10 text-slate-400 text-[10px] uppercase font-bold tracking-widest animate-pulse">Syncing...</div>
+                  <div className="flex justify-center p-10 text-slate-400 text-[10px] uppercase font-bold tracking-widest animate-pulse">Loading Messages...</div>
                 ) : messages.length > 0 ? (
                   messages.map((msg) => {
-                    const isMe = parseInt(msg.sender_id) === parseInt(currentUser.id);
+                    const isMe = Number(msg.sender_id) === currentUser.id;
                     return (
                       <div key={msg.id} className={`flex ${isMe ? "justify-end" : "justify-start"}`}>
                         <div className={`flex flex-col ${isMe ? "items-end" : "items-start"} max-w-[85%]`}>
@@ -234,7 +264,7 @@ export default function GlobalStaffChat({ user }) {
                     );
                   })
                 ) : (
-                  <div className="text-center py-20 text-[10px] text-slate-400 uppercase font-bold tracking-widest">No conversation yet</div>
+                  <div className="text-center py-20 text-[10px] text-slate-400 uppercase font-bold tracking-widest">Start a conversation</div>
                 )}
                 <div ref={messagesEndRef} />
               </div>
@@ -243,10 +273,10 @@ export default function GlobalStaffChat({ user }) {
                 <input
                   value={messageInput}
                   onChange={(e) => setMessageInput(e.target.value)}
-                  className="flex-1 bg-slate-50 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-green-600 outline-none border border-slate-100"
+                  className="flex-1 bg-slate-50 rounded-xl px-4 py-2.5 text-sm outline-none border border-slate-100 focus:ring-2 focus:ring-green-600"
                   placeholder="Type a message..."
                 />
-                <button type="submit" className="bg-green-600 text-white p-2.5 rounded-xl shadow-lg hover:bg-green-700 active:scale-95 transition-all">
+                <button type="submit" className="bg-green-600 text-white p-2.5 rounded-xl shadow-lg hover:bg-green-700 transition-all">
                   <Send size={18} />
                 </button>
               </form>
@@ -257,7 +287,7 @@ export default function GlobalStaffChat({ user }) {
 
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className={`p-4 rounded-full shadow-2xl transition-all duration-300 hover:scale-105 active:scale-95 relative ${
+        className={`p-4 rounded-full shadow-2xl transition-all duration-300 relative ${
           isOpen ? "bg-slate-900 text-white" : "bg-green-600 text-white"
         }`}
       >

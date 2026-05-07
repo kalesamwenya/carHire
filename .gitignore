@@ -41,4 +41,5 @@ yarn-error.log*
 next-env.d.ts
 
 #php api
-/php-api
+/php-api/public/uploads
+/php-api/uploads
