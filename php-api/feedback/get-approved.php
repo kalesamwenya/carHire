@@ -1,4 +1,5 @@
 <?php
+//File get-approved.php
 require_once '../config/origin.php';
 require_once '../config/config.php';
 header('Content-Type: application/json');

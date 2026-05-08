@@ -6,10 +6,9 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { toast, Toaster } from 'react-hot-toast';
 import { 
     FaSpinner, FaCar, FaCalendarAlt, FaUser, FaPhone, 
-    FaIdCard, FaCheckCircle, FaChevronLeft, FaChevronRight, FaCheck, FaInfoCircle, FaMoneyBillWave 
+    FaIdCard, FaCheckCircle, FaChevronLeft, FaChevronRight, FaCheck, FaInfoCircle, FaMoneyBillWave, FaTag 
 } from 'react-icons/fa';
-import { generateBookingReceipt } from "@/utils/generateBookingReceipt";
-import { getServerSession } from "next-auth";
+import { useSession } from "next-auth/react";
 
 // --- CONSTANTS ---
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "https://api.citydrivehire.com";
@@ -76,7 +75,7 @@ export default function BookingWizard() {
 }
 
 function BookingWizardContent() {
-    const { data: session } = getServerSession();
+    const { data: session } = useSession();
     const searchParams = useSearchParams();
     const router = useRouter();
     const initialCarId = searchParams.get('carId');
@@ -89,8 +88,10 @@ function BookingWizardContent() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [bookingResult, setBookingResult] = useState(null);
     const [showReserveModal, setShowReserveModal] = useState(false);
-
     const [generatedIds, setGeneratedIds] = useState({ bookingId: '', refCode: '' });
+    
+    // NEW: Promo Logic
+    const [promoCode, setPromoCode] = useState("");
 
     const [form, setForm] = useState({
         name: '',
@@ -100,6 +101,16 @@ function BookingWizardContent() {
         to: '',
         email: '' 
     });
+
+    useEffect(() => {
+        if (session?.user) {
+            setForm(prev => ({
+                ...prev,
+                name: session.user.name || '',
+                email: session.user.email || ''
+            }));
+        }
+    }, [session]);
 
     const todayStr = new Date().toISOString().split('T')[0];
 
@@ -128,23 +139,33 @@ function BookingWizardContent() {
     }, [initialCarId]);
 
     const pricing = useMemo(() => {
-        if (!selectedCar || !form.from || !form.to) return { days: 0, total: 0, isValid: false, meetsMinimum: false, minDays: DEFAULT_MIN_DAYS };
+        if (!selectedCar || !form.from || !form.to) return { days: 0, subtotal: 0, discount: 0, total: 0, isValid: false, meetsMinimum: false, minDays: DEFAULT_MIN_DAYS };
+        
         const start = new Date(form.from);
         const end = new Date(form.to);
-        const diffTime = end - start;
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; 
+        const diffDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1; 
         const days = diffDays > 0 ? diffDays : 0; 
+        
         const dailyRate = Number(selectedCar.price) || 0;
+        const subtotal = days * dailyRate;
         const minDaysRequired = Number(selectedCar.min_booking_days) || DEFAULT_MIN_DAYS;
+
+        // Promo Logic: 10% off with CITY2026
+        let discount = 0;
+        if (promoCode.trim().toUpperCase() === "CITY2026") {
+            discount = subtotal * 0.10;
+        }
         
         return { 
             days, 
-            total: days * dailyRate,
+            subtotal,
+            discount,
+            total: subtotal - discount,
             isValid: diffDays > 0,
             meetsMinimum: days >= minDaysRequired,
             minDays: minDaysRequired
         };
-    }, [selectedCar, form.from, form.to]);
+    }, [selectedCar, form.from, form.to, promoCode]);
 
     const handleNext = () => {
         if (step === 1) {
@@ -157,8 +178,8 @@ function BookingWizardContent() {
         } else if (step === 2) {
             setStep(3);
         } else if (step === 3) {
-            const { name, phone, license, from, to } = form;
-            if (!name || !phone || !license || !from || !to) return toast.error('Please fill in all fields');
+            const { name, phone, license, from, to, email } = form;
+            if (!name || !phone || !license || !from || !to || !email) return toast.error('Please fill in all fields');
             if (!pricing.isValid) return toast.error('Check your dates.');
             if (!pricing.meetsMinimum) return toast.error(`Minimum hire is ${pricing.minDays} days.`);
             
@@ -174,42 +195,28 @@ function BookingWizardContent() {
         const loadingToast = toast.loading("Finalizing your reservation...");
 
         try {
-            // Determine the email to send to PHP
-            const customerEmail = session?.user?.email || form.email;
-
-            if (!customerEmail) {
-                throw new Error("Email address is required to send your reservation receipt.");
-            }
+            const customerEmail = form.email || session?.user?.email;
+            if (!customerEmail) throw new Error("Email address is required for your receipt.");
 
             const formData = new FormData();
             formData.append("car_id", selectedCar.id);
             formData.append("user_id", session?.user?.id || "guest"); 
             formData.append("name", form.name);
-            formData.append("email", customerEmail); // <--- ADD THIS LINE (Matches $_POST['email'] in PHP)
+            formData.append("email", customerEmail);
             formData.append("phone", form.phone);
             formData.append("license", form.license);
             formData.append("from", form.from);
             formData.append("to", form.to);
             formData.append("total_price", pricing.total);
+            formData.append("promo_code", promoCode); // Track promo use in backend
+            formData.append("discount_amount", pricing.discount);
             formData.append("booking_id", generatedIds.bookingId);
             formData.append("reference_code", generatedIds.refCode);
             formData.append("visitor_id", visitorId);
             formData.append("payment_status", "pending_cash"); 
 
-            // axios automatically sets the correct Content-Type for FormData
             const res = await axios.post(`${API_BASE}/bookings/save-booking.php`, formData);
-
             if (!res.data?.success) throw new Error(res.data?.message || "Booking failed");
-
-            // Receipt logic
-            await generateBookingReceipt({
-                tx_ref: generatedIds.refCode,
-                amount: pricing.total,
-                customer: { ...form, email: customerEmail },
-                car: selectedCar,
-                dates: { from: form.from, to: form.to },
-                booking_id: generatedIds.bookingId
-            });
 
             setBookingResult({
                 booking_id: generatedIds.bookingId,
@@ -219,7 +226,6 @@ function BookingWizardContent() {
             setStep(5);
             toast.success("Reserved! Please visit our office for payment.", { id: loadingToast });
         } catch (err) {
-            // If the error comes from axios (res.data), use that message
             const errorMsg = err.response?.data?.message || err.message || "Server error";
             toast.error(errorMsg, { id: loadingToast });
         } finally {
@@ -347,6 +353,26 @@ function BookingWizardContent() {
                                     <input type="date" min={form.from || todayStr} value={form.to} onChange={e => setForm({...form, to: e.target.value})} className="p-3 border border-gray-200 rounded-lg text-black font-medium" />
                                 </div>
                             </div>
+
+                            {/* PROMO CODE SECTION */}
+                            <div className="mt-4 p-4 bg-green-50 border border-green-100 rounded-2xl">
+                                <label className="flex items-center gap-2 text-[10px] font-black text-green-700 uppercase mb-2">
+                                    <FaTag /> Have a promo code?
+                                </label>
+                                <div className="flex gap-2">
+                                    <input 
+                                        value={promoCode} 
+                                        onChange={e => setPromoCode(e.target.value)} 
+                                        className="flex-1 p-2 border border-green-200 rounded-lg outline-none focus:ring-2 focus:ring-green-500 text-black font-bold uppercase placeholder:normal-case placeholder:font-normal" 
+                                        placeholder="Enter code" 
+                                    />
+                                    {pricing.discount > 0 && (
+                                        <div className="flex items-center px-3 bg-green-600 text-white text-[10px] font-bold rounded-lg animate-pulse">
+                                            SAVED 10%
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
                         </div>
                     </div>
                 )}
@@ -356,20 +382,34 @@ function BookingWizardContent() {
                         <div className="text-center mb-8">
                             <h2 className="text-3xl font-black text-black">Confirm Booking</h2>
                             <p className="text-black font-medium">Ref: {generatedIds.bookingId}</p>
+                            {pricing.discount > 0 && (
+                                <div className="inline-block mt-2 px-4 py-1 bg-green-100 text-green-700 rounded-full text-xs font-bold border border-green-200">
+                                    Promotion Applied: 10% Discount
+                                </div>
+                            )}
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-5 gap-8">
                             <div className="md:col-span-2">
                                 <div className="bg-gray-50 p-6 rounded-[2rem] border border-gray-100">
-                                    <p className="text-[10px] font-black text-black uppercase mb-4">Trip Summary</p>
-                                    <div className="space-y-4">
-                                        <div className="bg-white p-3 rounded-xl border border-gray-200 text-black">
-                                            <span className="text-xs font-bold">{pricing.days} Days</span>
+                                    <p className="text-[10px] font-black text-black uppercase mb-4">Price Breakdown</p>
+                                    <div className="space-y-3">
+                                        <div className="flex justify-between text-xs text-gray-500">
+                                            <span>Subtotal ({pricing.days} Days)</span>
+                                            <span className="font-bold">K{pricing.subtotal.toLocaleString()}</span>
                                         </div>
+                                        
+                                        {pricing.discount > 0 && (
+                                            <div className="flex justify-between text-xs text-green-600 font-bold italic">
+                                                <span>Promo Discount</span>
+                                                <span>-K{pricing.discount.toLocaleString()}</span>
+                                            </div>
+                                        )}
+
                                         <div className="pt-4 border-t border-gray-200">
-                                            <div className="flex justify-between text-sm">
-                                                <span className="font-black text-black">Total Due</span>
-                                                <span className="font-black text-green-600 text-lg">K{pricing.total.toLocaleString()}</span>
+                                            <div className="flex justify-between items-center">
+                                                <span className="font-black text-black text-sm uppercase">Total Due</span>
+                                                <span className="font-black text-green-600 text-xl">K{pricing.total.toLocaleString()}</span>
                                             </div>
                                         </div>
                                     </div>
@@ -390,7 +430,7 @@ function BookingWizardContent() {
                                 <button onClick={submitBooking} disabled={isSubmitting} className="w-full py-5 rounded-2xl font-black text-xs uppercase tracking-widest text-white shadow-xl flex items-center justify-center gap-3 transition-all bg-green-600 hover:bg-green-700">
                                     {isSubmitting ? <FaSpinner className="animate-spin" /> : <><FaCheckCircle /> Confirm Reservation</>}
                                 </button>
-                                <p className="text-center text-[9px] text-black mt-6 font-bold uppercase">System Verified by Emit Security</p>
+                                <p className="text-center text-[9px] text-black mt-6 font-bold uppercase">System Verified Security</p>
                             </div>
                         </div>
                     </div>
@@ -405,13 +445,10 @@ function BookingWizardContent() {
                         <p className="text-black mb-8 font-medium">Please bring ZMW {bookingResult?.total_due?.toLocaleString()} to our office to finalize the process.</p>
 
                         <div className="bg-gray-50 border border-dashed border-gray-200 rounded-2xl p-6 mb-8 text-left">
-                            <div className="flex justify-between mb-4">
+                            <div className="flex justify-between">
                                 <span className="text-[10px] font-black uppercase text-black">Booking ID</span>
                                 <span className="text-xs font-bold font-mono text-black">{bookingResult?.booking_id}</span>
                             </div>
-                            <button onClick={() => window.print()} className="w-full py-3 bg-white border border-gray-200 text-black rounded-xl font-bold text-xs uppercase flex items-center justify-center gap-2">
-                                <FaIdCard /> Print Details
-                            </button>
                         </div>
                         <button onClick={() => router.push('/')} className="w-full py-4 bg-green-600 text-white rounded-2xl font-black text-xs uppercase shadow-lg">Return Home</button>
                     </div>

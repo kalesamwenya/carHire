@@ -73,7 +73,8 @@ try {
             reference_code, 
             car_id, 
             customer_name, 
-            customer_phone, 
+            customer_phone,
+            customer_email,
             license_number, 
             user_id, 
             visitor_id,
@@ -82,7 +83,7 @@ try {
             total_price, 
             status, 
             payment_status
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Pending', 'Unpaid')
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Pending', 'Unpaid')
     ");
 
     $stmt->execute([
@@ -91,6 +92,7 @@ try {
         $car_id,
         $cust_name,
         $cust_phone,
+        $cust_email,
         $license,
         $user_id_value, // Correctly passing NULL or valid INT
         $visitor_id,

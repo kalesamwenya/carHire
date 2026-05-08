@@ -184,4 +184,38 @@ class EmailHelper {
                     <a href='$link' style='background: ".self::$brandColor."; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px;'>Reset Password</a>";
         return self::sendBrandedEmail($to, "Reset Your Password", $content);
     }
+
+    public static function sendRefundedEmail($toEmail, $customerName, $carName, $bookingId, $amount) {
+    $subject = "Refund Processed - Booking #$bookingId";
+    $body = "
+        <div style='font-family: Arial, sans-serif; line-height: 1.6; color: #333;'>
+            <h2 style='color: #e67e22;'>Refund Confirmed</h2>
+            <p>Hello $customerName,</p>
+            <p>We are writing to let you know that a refund of <strong>K$amount</strong> has been processed for your booking <strong>#$bookingId</strong> ($carName).</p>
+            <p>Depending on your bank, the funds should appear in your account within 3-7 business days.</p>
+            <p>If you have any questions, please reply to this email.</p>
+            <br>
+            <p>Best regards,<br>The CityDrive Team</p>
+        </div>
+    ";
+    return self::sendEmail($toEmail, $subject, $body);
+}
+
+public static function sendPartnerRefundAlert($toEmail, $partnerName, $carName, $bookingId, $amount) {
+    $subject = "Action Required: Refund Processed for #$bookingId";
+    $body = "
+        <div style='font-family: Arial, sans-serif; line-height: 1.6; color: #333;'>
+            <h2 style='color: #d35400;'>Booking Refunded</h2>
+            <p>Hello $partnerName,</p>
+            <p>This is to notify you that a refund has been issued for booking <strong>#$bookingId</strong> involving the <strong>$carName</strong>.</p>
+            <p><strong>Refund Amount:</strong> K$amount</p>
+            <p>Please update your records accordingly. If the vehicle was held for this booking, it has now been marked as available for the selected dates.</p>
+            <br>
+            <p>CityDrive Admin System</p>
+        </div>
+    ";
+    return self::sendEmail($toEmail, $subject, $body);
+}
+
+    
 }

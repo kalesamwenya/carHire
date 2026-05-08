@@ -11,7 +11,8 @@ import {
     FaChartLine, 
     FaArrowUp, 
     FaTimes,
-    FaSortAmountDown
+    FaSortAmountDown,
+    FaExclamationCircle
 } from 'react-icons/fa';
 import { 
     BarChart, 
@@ -32,13 +33,14 @@ export default function InvoicesPage() {
     const [viewMode, setViewMode] = useState('paid'); // 'paid' or 'total'
     const [sortBy, setSortBy] = useState('newest'); // 'newest' or 'value'
     const [currentPage, setCurrentPage] = useState(1);
-    const itemsPerPage = 5;
+    const itemsPerPage = 6;
 
     const BASE_API = process.env.NEXT_PUBLIC_API_URL || "https://api.citydrivehire.com";
 
     useEffect(() => {
         const fetchFinancials = async () => {
             try {
+                // Now fetching from the updated aggregated endpoint
                 const res = await axios.get(`${BASE_API}/admin/get_financials.php`);
                 setRecords(Array.isArray(res.data.data) ? res.data.data : []);
             } catch (err) { 
@@ -50,20 +52,20 @@ export default function InvoicesPage() {
         fetchFinancials();
     }, []);
 
-    // 1. Summary Totals
+    // 1. Summary Totals - Accurate calculation of collected vs booked
     const stats = useMemo(() => {
         const paid = records.reduce((sum, r) => sum + (Number(r.amount_paid) || 0), 0);
         const total = records.reduce((sum, r) => sum + (Number(r.booking_total) || 0), 0);
-        return { paid, pending: total - paid, total };
+        return { paid, pending: Math.max(0, total - paid), total };
     }, [records]);
 
-    // 2. Safe Chart Logic (Restored Total Booked Toggle)
+    // 2. Monthly Revenue Distribution Logic
     const chartData = useMemo(() => {
         const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
         return months.map((m, index) => {
             const amount = records
                 .filter(r => {
-                    const rawDate = r.active_date || r.paid_at || r.created_at;
+                    const rawDate = r.active_date || r.created_at;
                     if (typeof rawDate !== 'string') return false; 
                     const date = new Date(rawDate.replace(' ', 'T'));
                     return !isNaN(date.getTime()) && date.getMonth() === index;
@@ -76,7 +78,7 @@ export default function InvoicesPage() {
         });
     }, [records, viewMode]);
 
-    // 3. Forecast Logic
+    // 3. Simple Forecast (Growth Factor: 15%)
     const forecast = useMemo(() => {
         const currentMonthIndex = new Date().getMonth();
         const recentData = chartData.slice(Math.max(0, currentMonthIndex - 2), currentMonthIndex + 1);
@@ -84,29 +86,24 @@ export default function InvoicesPage() {
         return Math.round(avg * 1.15); 
     }, [chartData]);
 
-    // 4. RESTORED: Filter & Sort Logic
+    // 4. Filtering and Sorting Logic
     const filteredRecords = useMemo(() => {
         return records.filter(r => {
-            const matchesSearch = r.customer_name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                                  r.display_id?.toString().includes(searchTerm);
+            const matchesSearch = 
+                r.customer_name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                r.display_id?.toString().includes(searchTerm) ||
+                r.car_name?.toLowerCase().includes(searchTerm.toLowerCase());
             
-            const rawDate = r.active_date || r.paid_at || r.created_at;
+            const rawDate = r.active_date || r.created_at;
             let matchesMonth = true;
             
             if (selectedMonth !== null) {
-                if (typeof rawDate !== 'string') {
-                    matchesMonth = false;
-                } else {
-                    const date = new Date(rawDate.replace(' ', 'T'));
-                    matchesMonth = !isNaN(date.getTime()) && date.getMonth() === selectedMonth;
-                }
+                const date = new Date(rawDate.replace(' ', 'T'));
+                matchesMonth = !isNaN(date.getTime()) && date.getMonth() === selectedMonth;
             }
             return matchesSearch && matchesMonth;
         }).sort((a, b) => {
-            if (sortBy === 'value') {
-                return Number(b.booking_total) - Number(a.booking_total);
-            }
-            // Default: Newest first
+            if (sortBy === 'value') return Number(b.booking_total) - Number(a.booking_total);
             const dateA = new Date((a.created_at || '').replace(' ', 'T'));
             const dateB = new Date((b.created_at || '').replace(' ', 'T'));
             return dateB - dateA;
@@ -115,14 +112,15 @@ export default function InvoicesPage() {
 
     const paginatedRecords = filteredRecords.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
- if (loading) return <CityDriveLoader message="sycing invoices data"/>;
+    if (loading) return <CityDriveLoader message="Syncing financial data..."/>;
+
     return (
         <div className="max-w-8xl mx-auto p-4 md:p-6 space-y-6 bg-gray-50 min-h-screen">
             
             {/* KPI Section */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
-                    <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">Cash Collected</p>
+                    <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">Collected (ZMW)</p>
                     <p className="text-2xl font-black text-slate-900 mt-1">K{stats.paid.toLocaleString()}</p>
                 </div>
                 <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
@@ -130,39 +128,48 @@ export default function InvoicesPage() {
                     <p className="text-2xl font-black text-slate-900 mt-1">K{stats.pending.toLocaleString()}</p>
                 </div>
                 <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Value</p>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Pipeline Value</p>
                     <p className="text-2xl font-black text-slate-900 mt-1">K{stats.total.toLocaleString()}</p>
                 </div>
                 <div className="bg-slate-900 p-5 rounded-2xl shadow-lg text-white">
-                    <p className="text-[10px] font-black uppercase tracking-widest text-emerald-400">Next Month Goal</p>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-emerald-400">Target Forecast</p>
                     <p className="text-2xl font-black mt-1">K{forecast.toLocaleString()}</p>
                 </div>
             </div>
 
-            {/* Graph with RESTORED Toggle */}
+            {/* Performance Chart */}
             <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
                 <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-8">
                     <div className="flex items-center gap-3">
                         <h2 className="text-sm font-black uppercase text-slate-900 tracking-tight">Revenue Insights</h2>
                         {selectedMonth !== null && (
                             <button onClick={() => setSelectedMonth(null)} className="px-3 py-1 bg-red-50 text-red-500 text-[10px] font-black rounded-full flex items-center gap-1 uppercase">
-                                <FaTimes /> Reset
+                                <FaTimes /> Clear Filter
                             </button>
                         )}
                     </div>
                     <div className="flex bg-slate-100 p-1 rounded-xl">
-                        <button onClick={() => setViewMode('paid')} className={`px-4 py-2 rounded-lg text-[10px] font-black transition-all ${viewMode === 'paid' ? 'bg-emerald-500 text-white shadow-md' : 'text-slate-400'}`}>PAID CASH</button>
-                        <button onClick={() => setViewMode('total')} className={`px-4 py-2 rounded-lg text-[10px] font-black transition-all ${viewMode === 'total' ? 'bg-slate-800 text-white shadow-md' : 'text-slate-400'}`}>TOTAL BOOKED</button>
+                        <button onClick={() => { setViewMode('paid'); setSelectedMonth(null); }} className={`px-4 py-2 rounded-lg text-[10px] font-black transition-all ${viewMode === 'paid' ? 'bg-emerald-500 text-white shadow-md' : 'text-slate-400'}`}>ACTUAL CASH</button>
+                        <button onClick={() => { setViewMode('total'); setSelectedMonth(null); }} className={`px-4 py-2 rounded-lg text-[10px] font-black transition-all ${viewMode === 'total' ? 'bg-slate-800 text-white shadow-md' : 'text-slate-400'}`}>TOTAL BOOKED</button>
                     </div>
                 </div>
                 <div className="h-64">
                     <ResponsiveContainer width="100%" height="100%">
                         <BarChart data={chartData}>
                             <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fontSize: 11, fontWeight: 'bold'}} />
-                            <Tooltip cursor={{fill: '#f8fafc'}} contentStyle={{borderRadius: '12px', border: 'none', fontWeight: 'bold'}} />
+                            <Tooltip 
+                                cursor={{fill: '#f8fafc'}} 
+                                contentStyle={{borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)'}} 
+                                formatter={(value) => [`K${value.toLocaleString()}`, viewMode === 'paid' ? 'Collected' : 'Booked']}
+                            />
                             <Bar dataKey="amount" onClick={(d) => setSelectedMonth(selectedMonth === d.index ? null : d.index)}>
                                 {chartData.map((entry, index) => (
-                                    <Cell key={index} cursor="pointer" fill={selectedMonth === index ? '#10b981' : (viewMode === 'paid' ? '#10b981' : '#0f172a')} fillOpacity={entry.amount > 0 ? 1 : 0.1} />
+                                    <Cell 
+                                        key={index} 
+                                        cursor="pointer" 
+                                        fill={selectedMonth === index ? '#10b981' : (viewMode === 'paid' ? '#10b981' : '#0f172a')} 
+                                        fillOpacity={entry.amount > 0 ? 1 : 0.1} 
+                                    />
                                 ))}
                             </Bar>
                         </BarChart>
@@ -170,13 +177,13 @@ export default function InvoicesPage() {
                 </div>
             </div>
 
-            {/* RESTORED: Search + Sort Row */}
+            {/* Filter Controls */}
             <div className="flex flex-col md:flex-row gap-3">
                 <div className="relative flex-1">
                     <FaSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
                     <input 
-                        type="text" placeholder="Search customer, car or invoice ID..."
-                        className="w-full pl-12 pr-4 py-4 bg-white border border-gray-100 rounded-2xl shadow-sm outline-none focus:ring-2 focus:ring-slate-900 transition-all text-sm"
+                        type="text" placeholder="Search by customer name, vehicle, or INV ID..."
+                        className="w-full pl-12 pr-4 py-4 bg-white border border-gray-100 rounded-2xl shadow-sm outline-none focus:ring-2 focus:ring-slate-900 transition-all text-sm font-medium"
                         onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
                     />
                 </div>
@@ -186,56 +193,84 @@ export default function InvoicesPage() {
                         className="py-4 text-[10px] font-black uppercase outline-none bg-transparent cursor-pointer"
                         onChange={(e) => setSortBy(e.target.value)}
                     >
-                        <option value="newest">Sort: Newest</option>
+                        <option value="newest">Sort: Newest First</option>
                         <option value="value">Sort: Highest Value</option>
                     </select>
                 </div>
             </div>
 
-            {/* List */}
+            {/* Invoice List */}
             <div className="grid gap-3">
-                {paginatedRecords.map((inv) => (
-                    <div key={inv.main_id} className="bg-white p-5 rounded-3xl border border-gray-100 flex items-center justify-between hover:shadow-md transition-all">
+                {paginatedRecords.length > 0 ? paginatedRecords.map((inv) => (
+                    <div key={inv.main_id} className="bg-white p-5 rounded-3xl border border-gray-100 flex items-center justify-between hover:shadow-md transition-all group">
                         <div className="flex items-center gap-5">
-                            <div className={`h-12 w-12 rounded-2xl flex items-center justify-center ${inv.payment_status === 'Verified' ? 'bg-emerald-50 text-emerald-500' : 'bg-slate-100 text-slate-400'}`}>
+                            <div className={`h-12 w-12 rounded-2xl flex items-center justify-center transition-colors ${
+                                inv.payment_status === 'Verified' ? 'bg-emerald-50 text-emerald-500' : 
+                                inv.payment_status === 'Partial' ? 'bg-amber-50 text-amber-500' : 'bg-slate-100 text-slate-400'
+                            }`}>
                                 <FaFileInvoice size={22} />
                             </div>
                             <div>
                                 <p className="font-black text-slate-900 tracking-tight text-sm">INV-{inv.display_id}</p>
-                                <p className="text-[10px] text-slate-400 font-bold uppercase">{inv.customer_name}</p>
+                                <p className="text-[10px] text-slate-400 font-bold uppercase">{inv.customer_name} • <span className="text-slate-500">{inv.car_name || 'Vehicle'}</span></p>
                             </div>
                         </div>
                         <div className="flex items-center gap-8">
                             <div className="text-right">
                                 <p className="font-black text-xl text-slate-900">K{Number(inv.booking_total).toLocaleString()}</p>
                                 <div className="flex items-center justify-end gap-1 mt-1">
-                                    {inv.payment_status === 'Verified' ? <FaCheckCircle className="text-emerald-500" size={10} /> : <FaClock className="text-orange-400" size={10} />}
-                                    <span className={`text-[9px] font-black uppercase ${inv.payment_status === 'Verified' ? 'text-emerald-500' : 'text-orange-400'}`}>{inv.payment_status || 'Pending'}</span>
+                                    {inv.payment_status === 'Verified' ? (
+                                        <>
+                                            <FaCheckCircle className="text-emerald-500" size={10} />
+                                            <span className="text-[9px] font-black uppercase text-emerald-500">Full Payment</span>
+                                        </>
+                                    ) : inv.payment_status === 'Partial' ? (
+                                        <>
+                                            <FaExclamationCircle className="text-amber-500" size={10} />
+                                            <span className="text-[9px] font-black uppercase text-amber-500">Partial: K{Number(inv.amount_paid).toLocaleString()}</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <FaClock className="text-slate-400" size={10} />
+                                            <span className="text-[9px] font-black uppercase text-slate-400">No Payment</span>
+                                        </>
+                                    )}
                                 </div>
                             </div>
                             <button 
-                                onClick={() => window.open(`http://api.citydrivehire.local/admin/generate_invoice.php?id=INV-${inv.main_id}`, '_blank')}
-                                className="h-12 w-12 border border-gray-100 rounded-2xl flex items-center justify-center text-slate-400 hover:bg-slate-900 hover:text-white transition-all shadow-sm"
-                            >
-                                <FaDownload size={16} />
-                            </button>
+    onClick={() => {
+        // We use inv.main_id (e.g., 35) to ensure the PHP script finds the record directly
+        const invoiceUrl = `${BASE_API}/admin/generate_invoice.php?id=${inv.main_id}&booking_id=${inv.display_id}`;
+        window.open(invoiceUrl, '_blank');
+    }}
+    title="Download Official Invoice"
+    className="h-12 w-12 border border-gray-100 rounded-2xl flex items-center justify-center text-slate-400 group-hover:bg-slate-900 group-hover:text-white transition-all shadow-sm"
+>
+    <FaDownload size={16} />
+</button>
                         </div>
                     </div>
-                ))}
+                )) : (
+                    <div className="bg-white p-12 rounded-3xl border border-dashed border-gray-200 text-center">
+                        <p className="text-slate-400 font-bold text-sm">No records found for the current selection.</p>
+                    </div>
+                )}
             </div>
 
-            {/* Pagination */}
-            <div className="flex justify-center gap-2 pt-4">
-                {[...Array(Math.ceil(filteredRecords.length / itemsPerPage))].map((_, i) => (
-                    <button 
-                        key={i} 
-                        onClick={() => { setCurrentPage(i + 1); window.scrollTo({top: 0, behavior: 'smooth'}); }}
-                        className={`w-10 h-10 rounded-xl font-black text-xs transition-all ${currentPage === i + 1 ? 'bg-slate-900 text-white shadow-lg' : 'bg-white border text-gray-400 hover:bg-gray-50'}`}
-                    >
-                        {i + 1}
-                    </button>
-                ))}
-            </div>
+            {/* Pagination Controls */}
+            {filteredRecords.length > itemsPerPage && (
+                <div className="flex justify-center gap-2 pt-4">
+                    {[...Array(Math.ceil(filteredRecords.length / itemsPerPage))].map((_, i) => (
+                        <button 
+                            key={i} 
+                            onClick={() => { setCurrentPage(i + 1); window.scrollTo({top: 0, behavior: 'smooth'}); }}
+                            className={`w-10 h-10 rounded-xl font-black text-xs transition-all ${currentPage === i + 1 ? 'bg-slate-900 text-white shadow-lg' : 'bg-white border text-gray-400 hover:bg-gray-50'}`}
+                        >
+                            {i + 1}
+                        </button>
+                    ))}
+                </div>
+            )}
         </div>
     );
 }

@@ -21,7 +21,9 @@ import {
     FaLifeRing, FaBell,
     FaCarSide,
     FaRobot,
-    FaComments
+    FaComments,
+    FaStar,
+    FaTag
 } from 'react-icons/fa';
 
 export default function AdminSidebar({ isOpen, setIsOpen }) {
@@ -57,6 +59,7 @@ export default function AdminSidebar({ isOpen, setIsOpen }) {
             items: [
                 { name: 'Analytics', href: '/admin/analytics', icon: FaChartLine }, // New
                 { name: 'Fleet Stats', href: '/admin/statistics', icon: FaChartPie }, // New
+                 { name: 'Manage Reviews', href: '/admin/feedback', icon: FaStar }, // New
             ]
         },
         {
@@ -79,6 +82,7 @@ export default function AdminSidebar({ isOpen, setIsOpen }) {
         {
             title: "System",
             items: [
+                { name: 'Promotions', href: '/admin/promotion', icon: FaTag },
                 { name: 'Team Management', href: '/admin/admins', icon: FaUserShield },
                 { name: 'Settings', href: '/admin/settings', icon: FaCog },
             ]

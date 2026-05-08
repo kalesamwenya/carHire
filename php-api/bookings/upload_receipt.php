@@ -5,12 +5,11 @@
  * 100% CityDrive Hire Branded
  */
 
-header("Access-Control-Allow-Origin: *"); // For production, replace * with your Next.js domain
+header("Access-Control-Allow-Origin: *"); 
 header("Access-Control-Allow-Methods: POST, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type");
 header("Content-Type: application/json");
 
-// Handle Pre-flight OPTIONS request
 if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
     exit;
 }
@@ -20,12 +19,12 @@ require_once '../config/EmailHelper.php';
 
 $data = json_decode(file_get_contents("php://input"), true);
 
-$booking_id = $data['booking_id'] ?? null;
+$id_input   = $data['booking_id'] ?? null; // Can be "35" or "INV-35"
 $pdf_base64 = $data['pdf_base64'] ?? null;
-$email      = $data['email']       ?? null;
-$name       = $customer_name       = $data['name'] ?? 'Valued Client';
+$email      = $data['email']      ?? null;
+$name       = $data['name']       ?? 'Valued Client';
 
-if (!$booking_id || !$pdf_base64 || !$email) {
+if (!$id_input || !$pdf_base64 || !$email) {
     http_response_code(400);
     echo json_encode(["success" => false, "message" => "Missing required booking data."]);
     exit;
@@ -37,96 +36,110 @@ if (!is_dir($upload_dir)) {
     mkdir($upload_dir, 0755, true);
 }
 
-// Clean filename to prevent injection
-$clean_id = preg_replace('/[^a-zA-Z0-9_-]/', '', $booking_id);
-$filename = "CityDrive_Receipt_" . $clean_id . ".pdf";
+// Ensure unique filename
+$clean_name = preg_replace('/[^a-zA-Z0-9_-]/', '', $id_input);
+$filename = "CityDrive_Receipt_" . $clean_name . "_" . time() . ".pdf";
 $db_path = "uploads/receipts/" . $filename; 
 $server_path = $upload_dir . $filename;
 
 try {
-    // 2. SANITIZE BASE64
+    $pdo = getDB();
+
+    // 2. RESOLVE INTERNAL BOOKING ID
+    $find = $pdo->prepare("SELECT id, booking_id FROM bookings WHERE id = ? OR booking_id = ? LIMIT 1");
+    $find->execute([$id_input, $id_input]);
+    $booking = $find->fetch(PDO::FETCH_ASSOC);
+
+    if (!$booking) throw new Exception("Booking record not found.");
+
+    $internal_id = $booking['id'];
+    $display_id  = $booking['booking_id'] ?: $internal_id;
+
+    // 3. SAVE PDF (Existing logic is good)
     if (strpos($pdf_base64, ',') !== false) {
         @list($type, $pdf_base64) = explode(',', $pdf_base64);
     }
-
     $decoded_pdf = base64_decode($pdf_base64, true);
-    if (!$decoded_pdf) throw new Exception("Invalid PDF encoding.");
-    
-    if (!file_put_contents($server_path, $decoded_pdf)) {
-        throw new Exception("Server Error: Cannot save receipt. Check folder permissions.");
-    }
+    file_put_contents($server_path, $decoded_pdf);
 
+  // 4. DATABASE UPDATE
+try {
     $pdo = getDB();
 
-    // 3. DATABASE UPDATE
-    // Updates the receipts path in the payments table for verification
+    // Attempt 1: Update using the Display ID (e.g., INV-1001)
+    // This is most likely what your 'payments' table uses as 'booking_id'
     $updateStmt = $pdo->prepare("UPDATE payments SET receipt_path = ? WHERE booking_id = ?");
-    $updateStmt->execute([$db_path, $booking_id]);
+    $updateStmt->execute([$db_path, $display_id]);
 
-    // 4. FETCH DETAILS FOR EMAILS
+    // Check if the first attempt actually updated a row
+    if ($updateStmt->rowCount() === 0) {
+        // Attempt 2: Update using the Internal Numeric ID (e.g., 35)
+        // If Attempt 1 found no rows, we try the primary key instead
+        $updateStmt->execute([$db_path, $internal_id]);
+    }
+
+    // Optional: Log if both attempts failed to find a record
+    if ($updateStmt->rowCount() === 0) {
+        error_log("Warning: No payment record found to update for Booking $display_id / $internal_id");
+        // Note: This won't throw an error, it just means the path wasn't stored 
+        // because the payment row doesn't exist yet.
+    }
+
+} catch (PDOException $e) {
+    throw new Exception("Database Error: Could not save receipt path. " . $e->getMessage());
+}
+    // 5. FETCH DETAILS FOR EMAILS (Fixed the WHERE clause and column names)
     $stmt = $pdo->prepare("
         SELECT 
-            u.email as partner_email, 
-            pa.business_name, 
-            c.name as car_name, 
-            b.total_price
+            b.total_price,
+            c.name AS car_name,
+            u_part.email AS partner_email, 
+            pa.business_name
         FROM bookings b
-        JOIN cars c ON b.car_id = c.id
-        JOIN users u ON c.partner_id = u.id
-        JOIN partner_about pa ON u.id = pa.user_id
-        WHERE b.booking_id = ?
+        INNER JOIN cars c ON b.car_id = c.id
+        LEFT JOIN users u_part ON c.partner_id = u_part.id
+        LEFT JOIN partner_about pa ON u_part.id = pa.user_id
+        WHERE b.id = ?  -- Added this critical filter
     ");
-    $stmt->execute([$booking_id]);
+    $stmt->execute([$internal_id]);
     $info = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    // 5. EMAIL DISPATCH (Customer) - BRANDED FOR CITYDRIVE
-    $custSubject = "Confirmed: Your CityDrive Hire Receipt #$booking_id";
+    // 6. EMAIL DISPATCH
+    $custSubject = "Confirmed: Your CityDrive Hire Receipt #$display_id";
+    // Using $info['car_name'] and $info['total_price'] fetched from DB for accuracy
+    $carLabel = $info['car_name'] ?? 'Reserved Vehicle';
+    $priceLabel = number_format($info['total_price'] ?? 0, 2);
+
     $custContent = "
-        <div style='font-family: Arial, sans-serif; max-width: 600px; color: #1e293b; line-height: 1.6;'>
-            <div style='background: #0f172a; padding: 20px; text-align: center; border-radius: 10px 10px 0 0;'>
-                <h1 style='color: white; margin: 0; font-size: 24px;'>City<span style='color: #16a34a;'>Drive</span></h1>
-            </div>
-            <div style='padding: 30px; border: 1px solid #f1f5f9;'>
-                <h2 style='color: #16a34a; margin-top: 0;'>Payment Confirmed!</h2>
-                <p>Hello <strong>$name</strong>,</p>
-                <p>Your booking has been successfully verified and paid. Please find your official digital receipt attached to this email.</p>
-                <div style='background: #f8fafc; padding: 15px; border-radius: 8px; margin: 20px 0;'>
-                    <p style='margin: 5px 0;'><strong>Booking ID:</strong> $booking_id</p>
-                    <p style='margin: 5px 0;'><strong>Vehicle:</strong> " . ($info['car_name'] ?? 'Reserved Vehicle') . "</p>
-                </div>
-                <p><strong>Next Steps:</strong> Please present the QR code on the attached receipt to our agent during vehicle pickup.</p>
-                <hr style='border: 0; border-top: 1px solid #f1f5f9; margin: 25px 0;' />
-                <p style='font-size: 11px; color: #94a3b8; text-align: center;'>
-                    CityDrive Hire Zambia | Premium Vehicle Rentals<br>
-                    Support: +260 972 338 115
-                </p>
-            </div>
+        <p>Hello <strong>$name</strong>,</p>
+        <p>Your payment for booking <strong>#$display_id</strong> has been verified.</p>
+        <div style='background: #f8fafc; padding: 15px; border-radius: 8px;'>
+            <p><strong>Vehicle:</strong> $carLabel</p>
+            <p><strong>Amount:</strong> K$priceLabel</p>
         </div>
+        <p>Please find your official receipt attached.</p>
     ";
 
-    // Pass the cleaned base64 for the email attachment
+    // Call helper with the raw base64 (EmailHelper decodes it)
     EmailHelper::sendBrandedEmail($email, $custSubject, $custContent, $pdf_base64, $filename);
 
-    // 6. PARTNER NOTIFICATION
-    if ($info) {
+    // 7. PARTNER NOTIFICATION
+    if (!empty($info['partner_email'])) {
         EmailHelper::sendPartnerAlert(
             $info['partner_email'],
             $info['business_name'],
-            $info['car_name'],
-            $booking_id,
+            $carLabel,
+            $display_id,
             $name,
             $info['total_price']
         );
     }
 
-    echo json_encode([
-        "success" => true, 
-        "message" => "Receipt generated and dispatched via email.",
-        "path" => $db_path
-    ]);
+    echo json_encode(["success" => true, "message" => "Receipt sent!"]);
 
 } catch (Exception $e) {
-    error_log("Receipt Upload Error: " . $e->getMessage());
+    echo json_encode(["success" => false, "message" => $e->getMessage()]);
+} catch (PDOException $e) {
     http_response_code(500);
-    echo json_encode(["success" => false, "message" => "Server Error: " . $e->getMessage()]);
+    echo json_encode(["success" => false, "message" => "Database Error: " . $e->getMessage()]);
 }

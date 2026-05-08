@@ -1,4 +1,5 @@
 <?php
+//FIle: submit.php
 require_once '../config/origin.php';
 require_once '../config/config.php';
 require_once '../config/EmailHelper.php'; // Important for the "Thank You" email
