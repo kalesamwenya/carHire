@@ -7,46 +7,54 @@ try {
 
     $revenueData = [];
     $labels = [];
+
     $currentWeekTotal = 0;
     $lastWeekTotal = 0;
 
-    // 1. Current 7 Days Revenue
+    // 1. CURRENT WEEK (with JOIN FIX)
     for ($i = 6; $i >= 0; $i--) {
-        $targetDate = date('Y-m-d', strtotime("-$i days"));
-        $labels[] = date('D', strtotime($targetDate));
-        
+        $date = date('Y-m-d', strtotime("-$i days"));
+        $labels[] = date('D', strtotime($date));
+
         $stmt = $pdo->prepare("
-            SELECT SUM(p.amount_paid) as daily_total 
+            SELECT COALESCE(SUM(p.amount_paid),0) as total
             FROM payments p
-            JOIN bookings b ON p.booking_id = b.id
+            LEFT JOIN bookings b ON p.booking_id = b.id
             WHERE DATE(COALESCE(p.paid_at, b.created_at)) = ?
         ");
-        $stmt->execute([$targetDate]);
-        $res = $stmt->fetch(PDO::FETCH_ASSOC);
-        $val = (float)($res['daily_total'] ?? 0);
+        $stmt->execute([$date]);
+
+        $val = (float)$stmt->fetchColumn();
         $revenueData[] = $val;
         $currentWeekTotal += $val;
     }
 
-    // 2. Previous 7 Days Revenue (for growth calculation)
-    $prevStart = date('Y-m-d', strtotime("-13 days"));
-    $prevEnd = date('Y-m-d', strtotime("-7 days"));
-    $stmtPrev = $pdo->prepare("
-        SELECT SUM(p.amount_paid) FROM payments p
-        JOIN bookings b ON p.booking_id = b.id
-        WHERE DATE(COALESCE(p.paid_at, b.created_at)) BETWEEN ? AND ?
+    // 2. PREVIOUS WEEK
+    $stmt = $pdo->prepare("
+        SELECT COALESCE(SUM(p.amount_paid),0)
+        FROM payments p
+        LEFT JOIN bookings b ON p.booking_id = b.id
+        WHERE DATE(COALESCE(p.paid_at, b.created_at))
+        BETWEEN DATE_SUB(CURDATE(), INTERVAL 13 DAY)
+        AND DATE_SUB(CURDATE(), INTERVAL 7 DAY)
     ");
-    $stmtPrev->execute([$prevStart, $prevEnd]);
-    $lastWeekTotal = (float)$stmtPrev->fetchColumn();
+    $stmt->execute();
+    $lastWeekTotal = (float)$stmt->fetchColumn();
 
-    // Calculate Growth %
-    $growth = ($lastWeekTotal > 0) ? round((($currentWeekTotal - $lastWeekTotal) / $lastWeekTotal) * 100) : 100;
+    $growth = ($lastWeekTotal > 0)
+        ? round((($currentWeekTotal - $lastWeekTotal) / $lastWeekTotal) * 100)
+        : 0;
 
-    // 3. Totals & Fleet
-    $totalBookings = $pdo->query("SELECT COUNT(booking_id) FROM bookings")->fetchColumn();
-    $totalCars = $pdo->query("SELECT COUNT(*) FROM cars")->fetchColumn();
-    $rentedCars = $pdo->query("SELECT COUNT(*) FROM cars WHERE available = '0'")->fetchColumn();
-    $utilization = ($totalCars > 0) ? round(($rentedCars / $totalCars) * 100) : 0;
+    // 3. BOOKINGS
+    $totalBookings = (int)$pdo->query("SELECT COUNT(*) FROM bookings")->fetchColumn();
+
+    // 4. FLEET
+    $totalCars = (int)$pdo->query("SELECT COUNT(*) FROM cars")->fetchColumn();
+    $rentedCars = (int)$pdo->query("SELECT COUNT(*) FROM cars WHERE available = 0")->fetchColumn();
+
+    $utilization = ($totalCars > 0)
+        ? round(($rentedCars / $totalCars) * 100)
+        : 0;
 
     echo json_encode([
         "success" => true,
@@ -54,13 +62,16 @@ try {
         "labels" => $labels,
         "growth" => $growth,
         "currentTotal" => $currentWeekTotal,
-        "totalBookings" => (int)$totalBookings,
-        "utilization" => (int)$utilization,
-        "rentedCount" => (int)$rentedCars,
-        "totalCars" => (int)$totalCars
+        "totalBookings" => $totalBookings,
+        "utilization" => $utilization,
+        "rentedCount" => $rentedCars,
+        "totalCars" => $totalCars
     ]);
 
 } catch (Exception $e) {
     http_response_code(500);
-    echo json_encode(["success" => false, "message" => $e->getMessage()]);
+    echo json_encode([
+        "success" => false,
+        "message" => $e->getMessage()
+    ]);
 }

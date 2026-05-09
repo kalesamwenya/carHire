@@ -33,37 +33,36 @@ export default function VerifyBooking() {
         process.env.NEXT_PUBLIC_API_URL ||
         'https://api.citydrivehire.com';
 
-    useEffect(() => {
-        if (!bookingIdFromUrl || bookingIdFromUrl === 'undefined') return;
+   useEffect(() => {
+    if (!bookingIdFromUrl || bookingIdFromUrl === 'undefined') return;
 
-        const fetchBooking = async () => {
-            try {
-                setLoading(true);
+    const fetchBooking = async () => {
+        try {
+            setLoading(true);
 
-                const res = await axios.get(
-                    `${BASE_API}/bookings/get-booking.php?id=${bookingIdFromUrl}`
-                );
+            const res = await axios.get(
+                `${BASE_API}/bookings/get-booking.php?id=${bookingIdFromUrl}`
+            );
 
-                // 🔥 HARDEN RESPONSE HANDLING
-                const data = res.data;
+            const responseData = res.data;
 
-                if (!data || data.success === false) {
-                    setBooking(null);
-                    return;
-                }
-
-                setBooking(data);
-            } catch (err) {
-                console.error('Verification Error:', err);
+            // Check if success is true and if the nested data object exists
+            if (responseData.success && responseData.data) {
+                // Set ONLY the inner data object to your state
+                setBooking(responseData.data); 
+            } else {
                 setBooking(null);
-            } finally {
-                setLoading(false);
             }
-        };
+        } catch (err) {
+            console.error('Verification Error:', err);
+            setBooking(null);
+        } finally {
+            setLoading(false);
+        }
+    };
 
-        fetchBooking();
-    }, [bookingIdFromUrl]);
-
+    fetchBooking();
+}, [bookingIdFromUrl, BASE_API]);
     const handleDownload = async () => {
         if (!booking) return;
 

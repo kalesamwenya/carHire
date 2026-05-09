@@ -2,7 +2,7 @@ import NextAuthProvider from "@/components/providers/NextAuthProvider";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth"; 
 import './globals.css';
-import VisitorTracker from "@/components/VisitorTracker";
+
 
 export default async function RootLayout({ children }) {
     // Fetch the session on the server
@@ -14,7 +14,6 @@ export default async function RootLayout({ children }) {
                 <main className="min-h-screen">
                     {/* Inject the session here */}
                     <NextAuthProvider session={session}>
-                        <VisitorTracker />
                         {children}
                     </NextAuthProvider>
                 </main>

@@ -1,100 +1,99 @@
 'use client';
-import { useEffect } from 'react';
+
+import { useEffect, useRef } from 'react';
 import axios from 'axios';
 import { useSession } from "next-auth/react";
 
 export default function VisitorTracker() {
-    const { data: session } = useSession();
+    const { data: session, status } = useSession();
+    const hasTracked = useRef(false);
 
     useEffect(() => {
-        const trackVisitor = async () => {
-            // 1. Bandwidth check
-            const lastTracked = localStorage.getItem('city_drive_last_tracked');
-            const today = new Date().toDateString();
-            
-            // If tracked today AND no user just logged in, skip
-            // (We track again if a user just logged in to link the ID)
-            if (lastTracked === today && !session?.user?.id) return;
-
-            // 2. Handle Unique Visitor ID
-            let vId = localStorage.getItem('city_drive_v_id');
-            if (!vId) {
-                vId = 'uid-' + Math.random().toString(36).substr(2, 9) + Date.now();
-                localStorage.setItem('city_drive_v_id', vId);
-            }
-
-            // 3. Metadata Detection
-            const ua = window.navigator.userAgent;
-            const platform = window.navigator.platform;
-            
-            const getOS = () => {
-                if (ua.indexOf("Win") !== -1) return "Windows";
-                if (ua.indexOf("Mac") !== -1) return "MacOS";
-                if (ua.indexOf("Linux") !== -1) return "Linux";
-                if (ua.indexOf("Android") !== -1) return "Android";
-                if (ua.indexOf("like Mac") !== -1) return "iOS";
-                return "Unknown OS";
-            };
-
-            const getDevice = () => {
-                if (/tablet|ipad|playbook|silk/i.test(ua)) return "Tablet";
-                if (/Mobile|Android|iP(hone|od)|IEMobile|BlackBerry|Kindle|Silk-Accelerated|(hpw|web)OS|Opera M(obi|ini)/.test(ua)) {
-                    return "Mobile";
-                }
-                return "Desktop";
-            };
-
-            const basePayload = {
-                visitor_id: vId,
-                user_id: session?.user?.id || null, // Link to Next-Auth session
-                device: getDevice(),
-                os: getOS(),
-                platform: platform,
-                lat: 0, // Using 0 instead of null to prevent PHP DB errors
-                lng: 0
-            };
-const sendData = async (payload) => {
-    const BASE_API = process.env.NEXT_PUBLIC_API_URL || "https://api.citydrivehire.com";
-    try {
-        const res = await axios.post(`${BASE_API}/reports/log_detailed_visit.php`, payload);
+        // Wait until session status is determined (either authenticated or unauthenticated)
+        if (status === "loading") return;
         
-        if (res.data.status === "tracked") {
-            localStorage.setItem('city_drive_last_tracked', today);
-        }
-    } catch (err) {
-        // This will print the actual error text even if CORS is acting up
-        if (err.response) {
-            // Server responded with a code (404, 500, etc)
-            console.error("Server Error:", err.response.data);
-        } else if (err.request) {
-            // Request was made but no response received (CORS or Network)
-            console.error("Network/CORS Error: No response from API.");
-        } else {
-            console.error("Setup Error:", err.message);
-        }
-    }
-};
+        // Prevent duplicate execution per session/login change
+        if (hasTracked.current) return;
+        hasTracked.current = true;
 
-            // 4. Geolocation Logic
-            if ("geolocation" in navigator) {
-                navigator.geolocation.getCurrentPosition(
-                    (pos) => {
-                        sendData({
-                            ...basePayload,
-                            lat: pos.coords.latitude,
-                            lng: pos.coords.longitude
+        const trackVisitor = async () => {
+            try {
+                const today = new Date().toDateString();
+                const lastTracked = localStorage.getItem('city_drive_last_tracked');
+                const isLoggedIn = !!session?.user?.email;
+
+                // If tracked today and NOT a new login, skip
+                if (lastTracked === today && !isLoggedIn) return;
+
+                // 1. Visitor ID logic
+                let visitorId = localStorage.getItem('city_drive_v_id');
+                if (!visitorId) {
+                    visitorId = `v-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 10)}`;
+                    localStorage.setItem('city_drive_v_id', visitorId);
+                }
+
+                // 2. Metadata Helpers
+                const ua = navigator.userAgent;
+                const getOS = () => {
+                    if (ua.includes("Windows")) return "Windows";
+                    if (ua.includes("Mac")) return "MacOS";
+                    if (ua.includes("Android")) return "Android";
+                    if (ua.includes("iPhone")) return "iOS";
+                    return "Linux/Other";
+                };
+
+                // 3. IP Fetch (External)
+                const getIP = async () => {
+                    try {
+                        const res = await axios.get('https://api.ipify.org?format=json', { timeout: 3000 });
+                        return res.data.ip;
+                    } catch { return '0.0.0.0'; }
+                };
+                const ip = await getIP();
+
+                // 4. Send Logic
+                const sendPayload = async (lat = 0, lng = 0) => {
+                    const BASE_API = process.env.NEXT_PUBLIC_API_URL || "https://api.citydrivehire.com";
+                    
+                    try {
+                        const res = await axios.post(`${BASE_API}/reports/log_detailed_visit.php`, {
+                            visitor_id: visitorId,
+                            email: session?.user?.email || null,
+                            device: /Mobi|Android/i.test(ua) ? "Mobile" : "Desktop",
+                            os: getOS(),
+                            platform: navigator.platform,
+                            ip_address: ip,
+                            lat,
+                            lng
                         });
-                    },
-                    () => sendData(basePayload), 
-                    { timeout: 3000 } // Shortened timeout
-                );
-            } else {
-                sendData(basePayload);
+
+                        if (res.data?.status === "tracked" || res.data?.status === "skipped") {
+                            localStorage.setItem('city_drive_last_tracked', today);
+                        }
+                    } catch (err) {
+                        // Better error logging to see the actual server response
+                        console.warn("Tracking subtle failure:", err.response?.data || err.message);
+                    }
+                };
+
+                // 5. Geolocation Execution
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(
+                        (pos) => sendPayload(pos.coords.latitude, pos.coords.longitude),
+                        () => sendPayload(0, 0),
+                        { timeout: 5000 }
+                    );
+                } else {
+                    sendPayload(0, 0);
+                }
+
+            } catch (e) {
+                console.error("Tracker system crash:", e);
             }
         };
 
         trackVisitor();
-    }, [session]); // Re-run if session status changes
+    }, [status, session?.user?.email]); // Re-run when session status changes
 
     return null;
 }
