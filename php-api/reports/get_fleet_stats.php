@@ -2,75 +2,214 @@
 require_once '../config/origin.php';
 require_once '../config/config.php';
 
+header('Content-Type: application/json');
+
 try {
+
     $pdo = getDB();
 
-    // 1. CALCULATE REAL RESIDENCY STATS
-    $stmtUsers = $pdo->query("SELECT COUNT(*) as total, 
-        SUM(CASE WHEN residency = 'Local' THEN 1 ELSE 0 END) as local_count,
-        SUM(CASE WHEN residency = 'International' THEN 1 ELSE 0 END) as int_count,
-        SUM(CASE WHEN residency = 'Corporate' THEN 1 ELSE 0 END) as corp_count
-        FROM users WHERE role = 'user'");
-    
-    $userStats = $stmtUsers->fetch();
-    $totalU = (int)$userStats['total'] ?: 1; // Prevent division by zero
+    /*
+    |--------------------------------------------------------------------------
+    | 1. USER DEMOGRAPHICS
+    |--------------------------------------------------------------------------
+    */
+
+    $stmtUsers = $pdo->query("
+        SELECT 
+            COUNT(*) as total,
+
+            SUM(CASE WHEN residency = 'Local' THEN 1 ELSE 0 END) as local_count,
+            SUM(CASE WHEN residency = 'International' THEN 1 ELSE 0 END) as international_count,
+            SUM(CASE WHEN residency = 'Corporate' THEN 1 ELSE 0 END) as corporate_count
+
+        FROM users
+        WHERE role = 'user'
+    ");
+
+    $userStats = $stmtUsers->fetch(PDO::FETCH_ASSOC);
+
+    $totalUsers = (int)($userStats['total'] ?? 0);
+
+    $safeTotalUsers = $totalUsers > 0 ? $totalUsers : 1;
 
     $demo = [
-        "local" => round(($userStats['local_count'] / $totalU) * 100),
-        "int" => round(($userStats['int_count'] / $totalU) * 100),
-        "corp" => round(($userStats['corp_count'] / $totalU) * 100)
+        "local" => round((($userStats['local_count'] ?? 0) / $safeTotalUsers) * 100),
+        "int" => round((($userStats['international_count'] ?? 0) / $safeTotalUsers) * 100),
+        "corp" => round((($userStats['corporate_count'] ?? 0) / $safeTotalUsers) * 100)
     ];
 
-    // 2. FLEET CATEGORY DISTRIBUTION
-    // We use a LEFT JOIN or specific counts to handle the new 'category' column
-    $categories = [
+
+    /*
+    |--------------------------------------------------------------------------
+    | 2. FLEET CATEGORY DISTRIBUTION
+    |--------------------------------------------------------------------------
+    */
+
+    $categoriesConfig = [
         ['name' => 'SUVs & 4x4', 'slug' => 'SUV', 'color' => 'bg-green-500'],
         ['name' => 'Luxury Sedans', 'slug' => 'Luxury', 'color' => 'bg-purple-500'],
         ['name' => 'Economy', 'slug' => 'Economy', 'color' => 'bg-blue-500'],
         ['name' => 'Vans / Bus', 'slug' => 'Van', 'color' => 'bg-orange-500'],
     ];
 
+    $totalFleet = (int)$pdo->query("SELECT COUNT(*) FROM cars")->fetchColumn();
+
+    $safeFleet = $totalFleet > 0 ? $totalFleet : 1;
+
     $fleetData = [];
-    $totalCars = (int)$pdo->query("SELECT COUNT(*) FROM cars")->fetchColumn() ?: 1;
 
-    foreach ($categories as $cat) {
-        $stmt = $pdo->prepare("SELECT COUNT(*) FROM cars WHERE category = ?");
-        $stmt->execute([$cat['slug']]);
-        $count = (int)$stmt->fetchColumn();
-        
+    foreach ($categoriesConfig as $cat) {
+
+        $stmtCat = $pdo->prepare("
+            SELECT COUNT(*) 
+            FROM cars 
+            WHERE category LIKE ?
+        ");
+
+        $stmtCat->execute(["%" . $cat['slug'] . "%"]);
+
+        $count = (int)$stmtCat->fetchColumn();
+
         $fleetData[] = [
-            'name' => $cat['name'],
-            'count' => $count,
-            'percentage' => round(($count / $totalCars) * 100),
-            'color' => $cat['color']
+            "name" => $cat['name'],
+            "count" => $count,
+            "percentage" => round(($count / $safeFleet) * 100),
+            "color" => $cat['color']
         ];
     }
 
-    // 3. VEHICLE HEALTH (Service Warnings)
-    $stmtHealth = $pdo->query("SELECT name, id, mileage FROM cars ORDER BY mileage DESC LIMIT 3");
-    $healthData = [];
-    while ($row = $stmtHealth->fetch()) {
-        $nextService = 5000;
-        $remain = $nextService - ($row['mileage'] % $nextService);
-        $healthData[] = [
-            "model" => $row['name'],
-            "plate" => "ZM-" . $row['id'],
-            "health" => round(($remain / $nextService) * 100),
-            "kmLeft" => $remain,
-            "status" => $remain < 1000 ? "Critical" : "Healthy"
+
+    /*
+    |--------------------------------------------------------------------------
+    | 3. VEHICLE HEALTH
+    |--------------------------------------------------------------------------
+    */
+
+    $stmtHealth = $pdo->query("
+        SELECT 
+            id,
+            name,
+            plate_number,
+            mileage
+        FROM cars
+        ORDER BY mileage DESC
+        LIMIT 3
+    ");
+
+    $vehicleHealth = [];
+
+    while ($car = $stmtHealth->fetch(PDO::FETCH_ASSOC)) {
+
+        $mileage = (int)($car['mileage'] ?? 0);
+
+        $serviceInterval = 5000;
+
+        $remaining = $serviceInterval - ($mileage % $serviceInterval);
+
+        $healthPercent = round(($remaining / $serviceInterval) * 100);
+
+        $vehicleHealth[] = [
+            "model" => $car['name'],
+            "plate" => $car['plate_number'] ?: ('ZM-' . $car['id']),
+            "health" => $healthPercent,
+            "kmLeft" => $remaining,
+            "status" => $remaining <= 1000 ? 'Critical' : 'Healthy'
         ];
     }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | 4. TOTAL DISTANCE
+    |--------------------------------------------------------------------------
+    */
+
+    $totalDistance = (int)$pdo->query("
+        SELECT COALESCE(SUM(mileage),0)
+        FROM cars
+    ")->fetchColumn();
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | 5. FUEL ESTIMATION
+    |--------------------------------------------------------------------------
+    | Approximation using 8km/L average
+    */
+
+    $fuelConsumed = round($totalDistance / 8);
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | 6. FLEET EFFICIENCY
+    |--------------------------------------------------------------------------
+    */
+
+    $efficiency = $fuelConsumed > 0
+        ? round($totalDistance / $fuelConsumed, 1)
+        : 0;
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | 7. TOP UTILIZED VEHICLE
+    |--------------------------------------------------------------------------
+    */
+
+    $stmtTopCar = $pdo->query("
+        SELECT 
+            c.name,
+            COUNT(b.id) as total_bookings
+
+        FROM bookings b
+
+        INNER JOIN cars c 
+            ON b.car_id = c.id
+
+        GROUP BY b.car_id
+
+        ORDER BY total_bookings DESC
+
+        LIMIT 1
+    ");
+
+    $topCar = $stmtTopCar->fetch(PDO::FETCH_ASSOC);
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | FINAL RESPONSE
+    |--------------------------------------------------------------------------
+    */
 
     echo json_encode([
         "success" => true,
-        "totalUsers" => (int)$userStats['total'],
+
+        "totalUsers" => $totalUsers,
+
         "demo" => $demo,
+
         "categories" => $fleetData,
-        "vehicleHealth" => $healthData,
-        "totalFleet" => (int)$totalCars,
-        "metrics" => ["dist" => 12450, "fuel" => 1850, "eff" => 6.7, "topCar" => "Toyota Hilux"]
+
+        "vehicleHealth" => $vehicleHealth,
+
+        "totalFleet" => $totalFleet,
+
+        "metrics" => [
+            "dist" => $totalDistance,
+            "fuel" => $fuelConsumed,
+            "eff" => $efficiency,
+            "topCar" => $topCar['name'] ?? 'N/A'
+        ]
     ]);
 
 } catch (Exception $e) {
-    echo json_encode(["success" => false, "message" => $e->getMessage()]);
+
+    http_response_code(500);
+
+    echo json_encode([
+        "success" => false,
+        "message" => $e->getMessage()
+    ]);
 }

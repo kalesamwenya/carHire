@@ -217,5 +217,28 @@ public static function sendPartnerRefundAlert($toEmail, $partnerName, $carName, 
     return self::sendEmail($toEmail, $subject, $body);
 }
 
+public static function sendRefundProcessedEmail($email, $name, $bookingId, $refundAmount, $fee) {
+    $subject = "Refund Processed - $bookingId";
+    $message = "
+        <div style='font-family: sans-serif; color: #333;'>
+            <h2>Refund Confirmation</h2>
+            <p>Hello $name,</p>
+            <p>Your refund for booking <strong>$bookingId</strong> has been processed.</p>
+            
+            <div style='background: #f8fafc; padding: 20px; border-radius: 10px; border: 1px solid #e2e8f0;'>
+                <p><strong>Total Paid:</strong> K" . ($refundAmount + $fee) . "</p>
+                <p style='color: #e53e3e;'><strong>Cancellation Fee:</strong> K$fee</p>
+                <hr>
+                <p style='font-size: 18px; color: #2f855a;'><strong>Refund Amount:</strong> K$refundAmount</p>
+            </div>
+
+            <p style='font-size: 12px; color: #718096; margin-top: 20px;'>
+                The refund will reflect in your account within 3-5 business days depending on your provider.
+            </p>
+        </div>
+    ";
+    return self::send($email, $subject, $message);
+}
+
     
 }

@@ -23,7 +23,8 @@ import {
     FaRobot,
     FaComments,
     FaStar,
-    FaTag
+    FaTag,
+    FaCalculator
 } from 'react-icons/fa';
 
 export default function AdminSidebar({ isOpen, setIsOpen }) {
@@ -60,6 +61,7 @@ export default function AdminSidebar({ isOpen, setIsOpen }) {
                 { name: 'Analytics', href: '/admin/analytics', icon: FaChartLine }, // New
                 { name: 'Fleet Stats', href: '/admin/statistics', icon: FaChartPie }, // New
                  { name: 'Manage Reviews', href: '/admin/feedback', icon: FaStar }, // New
+                 { name: 'Tax Reports', href: '/admin/reports/tax', icon: FaCalculator }, // New
             ]
         },
         {
