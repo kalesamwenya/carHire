@@ -111,7 +111,14 @@ class ComposerStaticInit2185d2f99bcd56787481d9357a5972d3
         ),
         'M' =>
         array (
+            'MaxMind\\WebService\\' => 19,
+            'MaxMind\\Exception\\' => 18,
+            'MaxMind\\Db\\' => 11,
             'Masterminds\\' => 12,
+        ),
+        'G' =>
+        array (
+            'GeoIp2\\' => 7,
         ),
         'F' =>
         array (
@@ -120,6 +127,10 @@ class ComposerStaticInit2185d2f99bcd56787481d9357a5972d3
         'D' =>
         array (
             'Dompdf\\' => 7,
+        ),
+        'C' =>
+        array (
+            'Composer\\CaBundle\\' => 18,
         ),
     );
 
@@ -142,9 +153,25 @@ class ComposerStaticInit2185d2f99bcd56787481d9357a5972d3
         array (
             0 => __DIR__ . '/..' . '/phpmailer/phpmailer/src',
         ),
+        'MaxMind\\WebService\\' =>
+        array (
+            0 => __DIR__ . '/..' . '/maxmind/web-service-common/src/WebService',
+        ),
+        'MaxMind\\Exception\\' =>
+        array (
+            0 => __DIR__ . '/..' . '/maxmind/web-service-common/src/Exception',
+        ),
+        'MaxMind\\Db\\' =>
+        array (
+            0 => __DIR__ . '/..' . '/maxmind-db/reader/src/MaxMind/Db',
+        ),
         'Masterminds\\' =>
         array (
             0 => __DIR__ . '/..' . '/masterminds/html5/src',
+        ),
+        'GeoIp2\\' =>
+        array (
+            0 => __DIR__ . '/..' . '/geoip2/geoip2/src',
         ),
         'FontLib\\' =>
         array (
@@ -153,6 +180,10 @@ class ComposerStaticInit2185d2f99bcd56787481d9357a5972d3
         'Dompdf\\' =>
         array (
             0 => __DIR__ . '/..' . '/dompdf/dompdf/src',
+        ),
+        'Composer\\CaBundle\\' =>
+        array (
+            0 => __DIR__ . '/..' . '/composer/ca-bundle/src',
         ),
     );
 
