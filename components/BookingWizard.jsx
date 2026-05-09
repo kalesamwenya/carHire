@@ -13,6 +13,38 @@ import { useSession } from "next-auth/react";
 // --- CONSTANTS ---
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "https://api.citydrivehire.com";
 const DEFAULT_MIN_DAYS = 2;
+const PROMO_STORAGE_KEY = 'citydrive_active_promo';
+
+// --- PROMO UTILITIES ---
+/**
+ * Checks localStorage for a promo code and ensures it hasn't expired.
+ */
+const getValidStoredPromo = () => {
+    if (typeof window === 'undefined') return null;
+    const stored = localStorage.getItem(PROMO_STORAGE_KEY);
+    if (!stored) return null;
+
+    try {
+        const { code, expiresAt } = JSON.parse(stored);
+        // Check if current time is less than expiry timestamp
+        if (new Date().getTime() < expiresAt) {
+            return code;
+        } else {
+            localStorage.removeItem(PROMO_STORAGE_KEY); // Self-clean
+            return null;
+        }
+    } catch (e) {
+        return null;
+    }
+};
+
+/**
+ * Persists a code with a 24-hour expiry timestamp
+ */
+const savePromoToLocal = (code) => {
+    const expiry = new Date().getTime() + (24 * 60 * 60 * 1000); // 24 Hours
+    localStorage.setItem(PROMO_STORAGE_KEY, JSON.stringify({ code, expiresAt: expiry }));
+};
 
 // --- UTILITY: Generate IDs ---
 const generateBookingIds = () => {
@@ -90,17 +122,14 @@ function BookingWizardContent() {
     const [showReserveModal, setShowReserveModal] = useState(false);
     const [generatedIds, setGeneratedIds] = useState({ bookingId: '', refCode: '' });
     
-    // NEW: Promo Logic
+    // Promo State
     const [promoCode, setPromoCode] = useState("");
 
     const [form, setForm] = useState({
-        name: '',
-        phone: '',
-        license: '',
-        from: '',
-        to: '',
-        email: '' 
+        name: '', phone: '', license: '', from: '', to: '', email: '' 
     });
+
+  
 
     useEffect(() => {
         if (session?.user) {
@@ -115,7 +144,6 @@ function BookingWizardContent() {
     const todayStr = new Date().toISOString().split('T')[0];
 
     useEffect(() => {
-        setVisitorId(localStorage.getItem('visitor_id'));
         const fetchCars = async () => {
             try {
                 const res = await axios.get(`${API_BASE}/cars/get-cars.php`);
@@ -138,34 +166,109 @@ function BookingWizardContent() {
         fetchCars();
     }, [initialCarId]);
 
-    const pricing = useMemo(() => {
-        if (!selectedCar || !form.from || !form.to) return { days: 0, subtotal: 0, discount: 0, total: 0, isValid: false, meetsMinimum: false, minDays: DEFAULT_MIN_DAYS };
-        
-        const start = new Date(form.from);
-        const end = new Date(form.to);
-        const diffDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1; 
-        const days = diffDays > 0 ? diffDays : 0; 
-        
-        const dailyRate = Number(selectedCar.price) || 0;
-        const subtotal = days * dailyRate;
-        const minDaysRequired = Number(selectedCar.min_booking_days) || DEFAULT_MIN_DAYS;
+   const pricing = useMemo(() => {
+    // Default empty state
+    const defaultState = { 
+        days: 0, subtotal: 0, discount: 0, total: 0, 
+        isValid: false, meetsMinimum: false, minDays: DEFAULT_MIN_DAYS,
+        promoError: null 
+    };
 
-        // Promo Logic: 10% off with CITY2026
-        let discount = 0;
-        if (promoCode.trim().toUpperCase() === "CITY2026") {
+    if (!selectedCar || !form.from || !form.to) return defaultState;
+
+    // 1. Calculate Duration
+    const start = new Date(form.from);
+    const end = new Date(form.to);
+    const diffDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
+    const days = diffDays > 0 ? diffDays : 0;
+
+    // 2. Calculate Subtotal
+    const dailyRate = Number(selectedCar.price) || 0;
+    const subtotal = days * dailyRate;
+    const minDaysRequired = Number(selectedCar.min_booking_days) || DEFAULT_MIN_DAYS;
+
+    // 3. Dynamic Promo Logic
+    let discount = 0;
+    let promoError = null;
+
+    if (promoCode.trim()) {
+        const stored = localStorage.getItem('citydrive_active_promo');
+        
+        if (stored) {
+            try {
+                const promo = JSON.parse(stored);
+                const isCorrectCode = promoCode.trim().toUpperCase() === promo.code.toUpperCase();
+                const isNotExpired = new Date().getTime() < promo.expiresAt;
+                const meetsSpend = subtotal >= promo.minSpend;
+
+                if (isCorrectCode && isNotExpired) {
+                    if (meetsSpend) {
+                        // Apply the percentage stored in the promo object
+                        discount = subtotal * (promo.discount / 100);
+                    } else {
+                        promoError = `Min spend K${promo.minSpend} required for this code.`;
+                    }
+                }
+            } catch (e) {
+                console.error("Promo parsing error", e);
+            }
+        } else if (promoCode.trim().toUpperCase() === "CITY2026") {
+            // Fallback for hardcoded default if no localStorage exists
             discount = subtotal * 0.10;
         }
+    }
+
+    return {
+        days,
+        subtotal,
+        discount,
+        total: subtotal - discount,
+        isValid: diffDays > 0,
+        meetsMinimum: days >= minDaysRequired,
+        minDays: minDaysRequired,
+        promoError // You can use this to show a small warning text in the UI
+    };
+}, [selectedCar, form.from, form.to, promoCode]);
+
+// Add this inside your BookingWizardContent component
+useEffect(() => {
+    const stored = localStorage.getItem('citydrive_active_promo');
+    if (stored) {
+        try {
+            const promo = JSON.parse(stored);
+            const now = new Date().getTime();
+
+            // 1. Check if the promo is still valid (time-wise)
+            if (now < promo.expiresAt) {
+                
+                // 2. Check if the current subtotal meets the minimum spend
+                // We use pricing.subtotal which is already calculated in your useMemo
+                if (pricing.subtotal >= promo.minSpend) {
+                    setPromoCode(promo.code);
+                    // No need to manually set discount here, 
+                    // your 'pricing' useMemo will pick up the promoCode change
+                }
+            } else {
+                // Remove it if it has expired
+                localStorage.removeItem('citydrive_active_promo');
+            }
+        } catch (e) {
+            console.error("Error parsing stored promo", e);
+        }
+    }
+}, [pricing.subtotal]); // This triggers whenever the price changes (dates or car choice)
+
+    // Handle Promo Input and Persistence
+    const handlePromoChange = (val) => {
+        const code = val.toUpperCase();
+        setPromoCode(code);
         
-        return { 
-            days, 
-            subtotal,
-            discount,
-            total: subtotal - discount,
-            isValid: diffDays > 0,
-            meetsMinimum: days >= minDaysRequired,
-            minDays: minDaysRequired
-        };
-    }, [selectedCar, form.from, form.to, promoCode]);
+        // If it matches valid code, save to local storage immediately
+        if (code === "CITY2026") {
+            savePromoToLocal(code);
+            toast.success("Promo code applied!");
+        }
+    };
 
     const handleNext = () => {
         if (step === 1) {
@@ -208,7 +311,7 @@ function BookingWizardContent() {
             formData.append("from", form.from);
             formData.append("to", form.to);
             formData.append("total_price", pricing.total);
-            formData.append("promo_code", promoCode); // Track promo use in backend
+            formData.append("promo_code", promoCode); 
             formData.append("discount_amount", pricing.discount);
             formData.append("booking_id", generatedIds.bookingId);
             formData.append("reference_code", generatedIds.refCode);
@@ -354,16 +457,18 @@ function BookingWizardContent() {
                                 </div>
                             </div>
 
-                            {/* PROMO CODE SECTION */}
-                            <div className="mt-4 p-4 bg-green-50 border border-green-100 rounded-2xl">
+                            {/* UPDATED PROMO CODE SECTION WITH PERSISTENCE */}
+                            <div className="mt-4 p-4 bg-green-50 border border-green-100 rounded-2xl transition-all">
                                 <label className="flex items-center gap-2 text-[10px] font-black text-green-700 uppercase mb-2">
-                                    <FaTag /> Have a promo code?
+                                    <FaTag /> Promo Code
                                 </label>
                                 <div className="flex gap-2">
                                     <input 
                                         value={promoCode} 
-                                        onChange={e => setPromoCode(e.target.value)} 
-                                        className="flex-1 p-2 border border-green-200 rounded-lg outline-none focus:ring-2 focus:ring-green-500 text-black font-bold uppercase placeholder:normal-case placeholder:font-normal" 
+                                        onChange={e => handlePromoChange(e.target.value)} 
+                                        className={`flex-1 p-2 border rounded-lg outline-none focus:ring-2 focus:ring-green-500 text-black font-bold uppercase transition-colors ${
+                                            pricing.discount > 0 ? 'border-green-500 bg-white' : 'border-green-200'
+                                        }`} 
                                         placeholder="Enter code" 
                                     />
                                     {pricing.discount > 0 && (
@@ -372,6 +477,11 @@ function BookingWizardContent() {
                                         </div>
                                     )}
                                 </div>
+                                {pricing.discount > 0 && (
+                                    <p className="mt-2 text-[9px] text-green-600 font-bold italic">
+                                        * Valid code recovered from your session.
+                                    </p>
+                                )}
                             </div>
                         </div>
                     </div>
