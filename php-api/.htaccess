@@ -10,6 +10,7 @@ RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^ index.php [QSA,L]
 
 # PHP Settings for Emit Photography
+php_value date.timezone "Africa/Lusaka"
 php_value upload_max_filesize 64M
 php_value post_max_size 128M
 php_value memory_limit 256M

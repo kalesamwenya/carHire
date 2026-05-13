@@ -6,7 +6,8 @@ import { usePathname } from 'next/navigation';
 import { signOut } from 'next-auth/react'; // ADD THIS IMPORT
 import {
     FaBars, FaTimes, FaHome, FaHistory, FaUser, FaCog, FaSignOutAlt, FaCar,
-    FaCarSide
+    FaCarSide,
+    FaLifeRing
 } from 'react-icons/fa';
 
 export default function DashboardLayoutClient({ user, children }) {
@@ -17,6 +18,7 @@ export default function DashboardLayoutClient({ user, children }) {
         { name: 'Overview', href: '/dashboard', icon: FaHome },
         { name: 'My Bookings', href: '/dashboard/bookings', icon: FaHistory },
         { name: 'Profile', href: '/dashboard/profile', icon: FaUser },
+        {name: 'help desk', href: '/dashboard/help', icon: FaLifeRing},
         { name: 'Settings', href: '/dashboard/settings', icon: FaCog },
     ];
 

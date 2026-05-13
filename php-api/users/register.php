@@ -21,6 +21,7 @@ register_shutdown_function(function() {
 require_once __DIR__ . '/../config/origin.php';
 require_once __DIR__ . '/../config/config.php';
 require_once __DIR__ . '/../config/EmailHelper.php';
+require_once __DIR__ . '/../config/NotificationHelper.php';
 
 $json = file_get_contents('php://input');
 $data = json_decode($json);
@@ -69,6 +70,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         $pdo->commit();
+
+        NotificationHelper::create(
+    $pdo,
+    'New User Registration',
+    $name . ' created a new account.',
+    'info',
+    $email,
+    'user'
+);
 
         http_response_code(201);
         echo json_encode([

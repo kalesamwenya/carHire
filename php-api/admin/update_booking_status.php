@@ -4,6 +4,7 @@
 require_once '../config/origin.php';
 require_once '../config/config.php';
 require_once '../config/EmailHelper.php';
+require_once '../config/NotificationHelper.php';
 
 header('Content-Type: application/json');
 
@@ -66,7 +67,7 @@ if ($id && in_array($newStatus, $validStatuses)) {
             }
 
             // Update payment to reflect retained amount (revenue kept)
-            $payStmt = $pdo->prepare("UPDATE payments SET payment_status = 'Failed', amount_paid = ? WHERE booking_id = ?");
+            $payStmt = $pdo->prepare("UPDATE payments SET payment_status = 'Refunded', amount_paid = ? WHERE booking_id = ?");
             $payStmt->execute([$retainedAmount, $details['booking_id']]);
         } else {
             // Standard Status Mapping
@@ -74,14 +75,17 @@ if ($id && in_array($newStatus, $validStatuses)) {
             $payStmt = $pdo->prepare("
                 UPDATE payments 
                 SET payment_status = ?, 
-                    paid_at = CASE WHEN ? = 'Verified' AND paid_at IS NULL THEN CURRENT_TIMESTAMP ELSE paid_at END
+                    paid_at = CASE 
+                        WHEN ? = 'Verified' THEN NOW() 
+                        ELSE paid_at 
+                    END
                 WHERE booking_id = ?
             ");
             $payStmt->execute([$paymentStatus, $paymentStatus, $details['booking_id']]);
         }
 
         // 3. Update Booking Table
-        $stmt = $pdo->prepare("UPDATE bookings SET status = ? WHERE id = ?");
+        $stmt = $pdo->prepare("UPDATE bookings SET status = ?, payment_status = 'Paid' WHERE id = ?");
         $stmt->execute([$newStatus, $id]);
 
         $pdo->commit();
@@ -119,6 +123,52 @@ if ($id && in_array($newStatus, $validStatuses)) {
                 error_log("CityDrive Email Error: " . $e->getMessage());
             }
         }
+
+        if ($newStatus === 'confirmed') {
+
+    NotificationHelper::create(
+        $pdo,
+        'Booking Confirmed',
+        'Booking #' . $details['booking_id'] . ' for ' . $details['customer_name'] . ' has been confirmed.',
+        'success',
+        $details['booking_id'],
+        'booking'
+    );
+
+} elseif ($newStatus === 'completed') {
+
+    NotificationHelper::create(
+        $pdo,
+        'Trip Completed',
+        'Booking #' . $details['booking_id'] . ' has been marked as completed.',
+        'info',
+        $details['booking_id'],
+        'booking'
+    );
+
+} elseif ($newStatus === 'cancelled') {
+
+    NotificationHelper::create(
+        $pdo,
+        'Booking Cancelled',
+        'Booking #' . $details['booking_id'] . ' has been cancelled.',
+        'alert',
+        $details['booking_id'],
+        'booking'
+    );
+
+} elseif ($newStatus === 'refunded') {
+
+    NotificationHelper::create(
+        $pdo,
+        'Refund Processed',
+        'Refund issued for booking #' . $details['booking_id'] . '.',
+        'alert',
+        $details['booking_id'],
+        'refund'
+    );
+
+}
 
         echo json_encode([
             "status" => "success", 

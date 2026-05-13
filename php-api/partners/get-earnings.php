@@ -4,45 +4,82 @@ require_once '../config/config.php';
 
 header('Content-Type: application/json');
 
-$userId = $_GET['user_id'] ?? null;
+$userId = $_GET['partner_id'] ?? null;
+
 if (!$userId) {
-    echo json_encode(["success" => false, "message" => "User ID required"]);
+    echo json_encode([
+        "success" => false,
+        "message" => "Partner ID required"
+    ]);
     exit;
 }
 
 $pdo = getDB();
 
 try {
-    // We use COALESCE to return 0 instead of NULL if a car has no bookings yet
+
+    /**
+     * MAIN QUERY
+     * We calculate:
+     * - trips (count of bookings)
+     * - earnings (sum of total_price where NOT cancelled)
+     */
+
     $stmt = $pdo->prepare("
         SELECT 
-            c.id, 
-            c.name, 
-            c.plate_number as plate,
-            (SELECT COUNT(*) FROM bookings WHERE car_id = c.id) as trips,
-            (SELECT COALESCE(SUM(total_price), 0) FROM bookings WHERE car_id = c.id AND status != 'Cancelled') as earnings,
-            -- Setting expenses to 0 for now as it's not in your cars table
-            0 as expenses
+            c.id,
+            c.name,
+            c.plate_number AS plate,
+
+            COUNT(b.id) AS trips,
+
+            COALESCE(
+                SUM(
+                    CASE 
+                        WHEN b.status != 'Cancelled' 
+                        THEN b.total_price 
+                        ELSE 0 
+                    END
+                ), 0
+            ) AS earnings,
+
+            0 AS expenses
+
         FROM cars c
-        WHERE c.partner_id = ? 
+
+        LEFT JOIN bookings b 
+            ON b.car_id = c.id
+
+        WHERE c.partner_id = ?
+
+        GROUP BY c.id, c.name, c.plate_number
+
         ORDER BY c.created_at DESC
     ");
-    
+
     $stmt->execute([$userId]);
     $fleet = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    // Final check/format for React
+    /**
+     * FORMAT FOR FRONTEND SAFETY
+     */
     foreach ($fleet as &$car) {
-        $car['trips'] = (int)$car['trips'];
-        $car['earnings'] = (float)$car['earnings'];
-        $car['expenses'] = (float)$car['expenses'];
+        $car['trips'] = (int) $car['trips'];
+        $car['earnings'] = (float) $car['earnings'];
+        $car['expenses'] = (float) $car['expenses'];
     }
 
     echo json_encode([
         "success" => true,
-        "data" => $fleet ?: []
+        "data" => $fleet
     ]);
 
 } catch (PDOException $e) {
-    echo json_encode(["success" => false, "message" => $e->getMessage()]);
+
+    http_response_code(500);
+
+    echo json_encode([
+        "success" => false,
+        "message" => "Database Error: " . $e->getMessage()
+    ]);
 }

@@ -49,7 +49,7 @@ export default function GlobalStaffChat({ user }) {
 
   const playNotification = () => {
     if (soundEnabled) {
-      const audio = new Audio('/sounds/notification.mp3');
+      const audio = new Audio('/sound/universfield-new-notification-066-494545.mp3');
       audio.play().catch(() => {}); 
     }
   };

@@ -1,104 +1,190 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { FaChartBar, FaChartLine, FaSpinner } from 'react-icons/fa';
+import { useState, useEffect, useMemo } from 'react';
+import { useSession } from 'next-auth/react';
+import {
+    FaChartBar,
+    FaChartLine,
+    FaSpinner,
+    FaCar,
+    FaArrowUp
+} from 'react-icons/fa';
 import axios from 'axios';
+import CityDriveLoader from '@/components/CityDriveLoader';
+
+const BASE_API = process.env.NEXT_PUBLIC_API_URL || "https://api.citydrivehire.com";
 
 export default function AnalyticsPage() {
+    const { data: session } = useSession();
     const [data, setData] = useState({ revenue: [], utilization: [] });
+    const [stats, setStats] = useState({
+        totalRevenue: 0,
+        avgUtilization: 0,
+        totalBookings: 0,
+        activeVehicles: 0
+    });
     const [loading, setLoading] = useState(true);
-    const partnerId = 1; // Replace with dynamic auth id
 
-    const BASE_API = process.env.NEXT_PUBLIC_API_URL || "https://api.citydrivehire.com";
+    const partnerId = session?.user?.id;
 
-    useEffect(() => {
-        const fetchAnalytics = async () => {
-            try {
-                const res = await axios.get(`${BASE_API}/partners/get-analytics.php?user_id=${partnerId}`);
-                if (res.data.success) {
-                    setData({
-                        revenue: res.data.revenue,
-                        utilization: res.data.utilization
-                    });
+   useEffect(() => {
+    if (!partnerId) return;
+
+    const fetchAnalytics = async () => {
+        try {
+            setLoading(true);
+
+            const res = await axios.get(
+                `${BASE_API}/partners/get-analytics.php?partner_id=${partnerId}`,
+                {
+                    headers: {
+                        Authorization: `Bearer ${session?.user?.token}`
+                    }
                 }
-            } catch (err) {
-                console.error("Analytics fetch error", err);
-            } finally {
-                setLoading(false);
+            );
+
+            if (res.data.success) {
+                setData({
+                    revenue: res.data.revenue || [],
+                    utilization: res.data.utilization || []
+                });
+
+                setStats({
+                    totalRevenue: Number(res.data.stats?.total_revenue || 0),
+                    avgUtilization: Number(res.data.stats?.avg_utilization || 0),
+                    totalBookings: Number(res.data.stats?.total_bookings || 0),
+                    activeVehicles: Number(res.data.stats?.active_vehicles || 0)
+                });
             }
-        };
-        fetchAnalytics();
-    }, [partnerId]);
 
-    // Calculate max revenue to scale the CSS bars
-    const maxRev = Math.max(...data.revenue.map(r => r.total), 1);
+        } catch (err) {
+            console.error("Analytics fetch error", err);
+        } finally {
+            setLoading(false);
+        }
+    };
 
-    if (loading) return (
-        <div className="flex h-96 items-center justify-center text-green-600 font-bold">
-            <FaSpinner className="animate-spin mr-2" /> Analyzing Fleet Performance...
-        </div>
-    );
+    fetchAnalytics();
+
+}, [partnerId]); // ✅ FIXED
+
+
+    // Use useMemo for calculation to prevent jitter on re-renders
+    const maxRev = useMemo(() => {
+        const values = data.revenue.map(r => Number(r.total));
+        return Math.max(...values, 1);
+    }, [data.revenue]);
+
+    if (loading) {
+        return (
+            <CityDriveLoader message="Loading your performance analytics..." />
+        );
+    }
 
     return (
-        <div className="space-y-8 animate-in fade-in duration-500">
-            <h1 className="text-2xl font-bold text-gray-900">Performance Analytics</h1>
+        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+            {/* HEADER */}
+            <div>
+                <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Performance Analytics</h1>
+                <p className="text-gray-500 mt-1">Real-time insights for CityDrive Partners.</p>
+            </div>
 
+            {/* STATS CARDS */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
+                <StatCard title="Total Revenue" value={`ZMW ${stats.totalRevenue.toLocaleString()}`} icon={<FaChartBar />} color="green" />
+                <StatCard title="Avg Utilization" value={`${stats.avgUtilization}%`} icon={<FaChartLine />} color="blue" />
+                <StatCard title="Total Bookings" value={stats.totalBookings} icon={<FaArrowUp />} color="purple" />
+                <StatCard title="Active Vehicles" value={stats.activeVehicles} icon={<FaCar />} color="orange" />
+            </div>
+
+            {/* CHARTS SECTION */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-
-                {/* 1. Monthly Revenue Chart (CSS Driven) */}
-                <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-                    <h3 className="font-bold text-gray-900 flex items-center gap-2 mb-6">
-                        <FaChartBar className="text-blue-600" /> Monthly Revenue (ZMW)
+                
+                {/* MONTHLY REVENUE GRAPH */}
+                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                    <h3 className="font-bold text-gray-800 flex items-center gap-2 mb-8">
+                        <div className="p-2 bg-blue-50 rounded-lg text-blue-600"><FaChartBar size={14}/></div>
+                        Monthly Revenue
                     </h3>
 
-                    <div className="h-64 flex items-end justify-between gap-2 px-2">
-                        {data.revenue.map((item, idx) => {
-                            const height = (item.total / maxRev) * 100;
-                            return (
-                                <div key={idx} className="flex-1 flex flex-col items-center gap-2 group">
-                                    <div className="relative w-full bg-gray-50 rounded-t-lg h-full flex items-end overflow-hidden">
-                                        <div
-                                            className="w-full bg-blue-500 hover:bg-blue-600 transition-all duration-700 rounded-t-lg relative group-hover:shadow-lg"
-                                            style={{ height: `${height}%` }}
-                                        >
-                                            <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-[10px] py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
+                    {data.revenue.length === 0 ? (
+                        <div className="h-72 flex items-center justify-center text-sm text-gray-400 italic">No revenue trends available.</div>
+                    ) : (
+                        <div className="h-72 flex items-end justify-between gap-3 px-2">
+                            {data.revenue.map((item, idx) => {
+                                const heightPercentage = (Number(item.total) / maxRev) * 100;
+                                return (
+                                    <div key={idx} className="flex-1 flex flex-col items-center h-full group">
+                                        <div className="relative w-full h-full flex items-end">
+                                            {/* Tooltip */}
+                                            <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-[11px] py-1.5 px-3 rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none shadow-xl z-20 mb-2">
                                                 ZMW {Number(item.total).toLocaleString()}
+                                                <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-gray-900 rotate-45"></div>
                                             </div>
+
+                                            {/* The Bar */}
+                                            <div 
+                                                className="w-full bg-gradient-to-t from-blue-600 to-blue-400 rounded-t-md transition-all duration-1000 ease-out group-hover:from-blue-500 group-hover:to-blue-300 cursor-pointer relative"
+                                                style={{ height: `${Math.max(heightPercentage, 5)}%` }} 
+                                            />
                                         </div>
+                                        <span className="text-[10px] text-gray-400 font-bold uppercase mt-4 rotate-[-45deg] lg:rotate-0">
+                                            {item.month.substring(0, 3)}
+                                        </span>
                                     </div>
-                                    <span className="text-[10px] text-gray-500 font-bold uppercase tracking-tighter">{item.month}</span>
-                                </div>
-                            );
-                        })}
-                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
                 </div>
 
-                {/* 2. Vehicle Utilization */}
-                <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-                    <h3 className="font-bold text-gray-900 mb-6 flex items-center gap-2">
-                        <FaChartLine className="text-green-600" /> Vehicle Utilization
+                {/* UTILIZATION LIST */}
+                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                    <h3 className="font-bold text-gray-800 mb-8 flex items-center gap-2">
+                         <div className="p-2 bg-green-50 rounded-lg text-green-600"><FaChartLine size={14}/></div>
+                        Vehicle Utilization
                     </h3>
                     <div className="space-y-6">
                         {data.utilization.map((vehicle, idx) => (
                             <div key={idx}>
-                                <div className="flex justify-between text-sm mb-1">
-                                    <span className="font-medium text-gray-700">{vehicle.name}</span>
-                                    <span className={`font-bold ${vehicle.percentage > 70 ? 'text-green-700' : 'text-yellow-600'}`}>
+                                <div className="flex justify-between text-sm mb-2 font-medium">
+                                    <span className="text-gray-700">{vehicle.name}</span>
+                                    <span className={vehicle.percentage > 70 ? 'text-green-600' : 'text-orange-500'}>
                                         {vehicle.percentage}%
                                     </span>
                                 </div>
-                                <div className="w-full h-3 bg-gray-100 rounded-full overflow-hidden">
+                                <div className="w-full h-2.5 bg-gray-100 rounded-full">
                                     <div 
-                                        className={`h-full transition-all duration-1000 rounded-full ${vehicle.percentage > 70 ? 'bg-green-500' : 'bg-yellow-500'}`} 
+                                        className={`h-full rounded-full transition-all duration-1000 ${vehicle.percentage > 70 ? 'bg-green-500' : 'bg-orange-500'}`}
                                         style={{ width: `${vehicle.percentage}%` }}
-                                    ></div>
+                                    />
                                 </div>
                             </div>
                         ))}
                     </div>
-                    <p className="mt-6 text-[10px] text-gray-400 font-medium italic">
-                        *Based on 30-day rental cycles.
-                    </p>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+// Sub-component for stats to keep main code clean
+function StatCard({ title, value, icon, color }) {
+    const colors = {
+        green: "bg-green-50 text-green-600",
+        blue: "bg-blue-50 text-blue-600",
+        purple: "bg-purple-50 text-purple-600",
+        orange: "bg-orange-50 text-orange-600"
+    };
+    return (
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 hover:border-green-200 transition-colors">
+            <div className="flex items-center justify-between">
+                <div>
+                    <p className="text-xs text-gray-400 font-semibold uppercase tracking-wider">{title}</p>
+                    <h2 className="text-2xl font-black text-gray-900 mt-1">{value}</h2>
+                </div>
+                <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${colors[color]}`}>
+                    {icon}
                 </div>
             </div>
         </div>

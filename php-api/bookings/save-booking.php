@@ -4,6 +4,7 @@
 require_once '../config/origin.php';
 require_once '../config/config.php';
 require_once '../config/EmailHelper.php';
+require_once '../config/NotificationHelper.php';
 
 header('Content-Type: application/json');
 
@@ -60,7 +61,12 @@ try {
     // =======================
     // 3. FETCH CAR DETAILS
     // =======================
-    $carQuery = $pdo->prepare("SELECT name FROM cars WHERE id = ? LIMIT 1");
+    $carQuery = $pdo->prepare("
+    SELECT name, partner_id 
+    FROM cars 
+    WHERE id = ? 
+    LIMIT 1
+");
     $carQuery->execute([$car_id]);
     $car_name = $carQuery->fetchColumn() ?: "CityDrive Vehicle";
 
@@ -143,6 +149,17 @@ try {
     $payStmt->execute([$booking_id, $ref_code, $total]);
 
     $pdo->commit();
+
+  NotificationHelper::create(
+    $pdo,
+    'New Booking Received',
+    $cust_name . ' booked ' . $car_name . ' (Booking #' . $booking_id . ')',
+    'success',
+    $booking_id,
+    'booking',
+    $partner_id,   // 👈 THIS IS THE LINK
+    null
+);
 
     // =======================
     // 7. EMAIL NOTIFICATION

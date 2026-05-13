@@ -86,7 +86,6 @@ export default function AdminHeader({ user, onMenuClick }) {
 
             {/* --- RIGHT SIDE: Components --- */}
             <div className="flex items-center gap-4" ref={actionContainerRef}>
-                <ChatDropdown unreadCount={2} />
                 <MessagesDropdown
                     isOpen={activeDropdown === 'messages'}
                     onToggle={() => toggle('messages')}

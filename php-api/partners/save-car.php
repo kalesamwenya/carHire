@@ -1,6 +1,7 @@
 <?php
 require_once '../config/origin.php';
 require_once '../config/config.php';
+require_once '../config/NotificationHelper.php';
 header('Content-Type: application/json');
 
 $db = getDB();
@@ -81,7 +82,20 @@ try {
     }
 
     $db->commit();
+
+        NotificationHelper::create(
+    $pdo,
+    'New Booking',
+    $cust_name . ' created booking #' . $booking_id,
+    'success',
+    $booking_id,
+    'booking'
+);
+
     echo json_encode(["status" => "success", "message" => "Vehicle and images saved successfully!", "car_id" => $car_id]);
+
+
+    
 
 } catch (Exception $e) {
     $db->rollBack();

@@ -24,12 +24,61 @@ import {
     FaWallet,
     FaShieldAlt,
     FaDatabase,
+    FaFileExcel,
+    FaChevronLeft,
+    FaChevronRight,
 } from 'react-icons/fa';
 
+import CityDriveLoader from '@/components/CityDriveLoader';
+
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
+
+export const exportTransactionsToExcel = (
+    transactions,
+    monthName
+) => {
+    const worksheet =
+        XLSX.utils.json_to_sheet(transactions);
+
+    const workbook = XLSX.utils.book_new();
+
+    XLSX.utils.book_append_sheet(
+        workbook,
+        worksheet,
+        'Transactions'
+    );
+
+    const excelBuffer = XLSX.write(workbook, {
+        bookType: 'xlsx',
+        type: 'array',
+    });
+
+    const data = new Blob([excelBuffer], {
+        type:
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8',
+    });
+
+    saveAs(
+        data,
+        `Transactions_Report_${monthName}.xlsx`
+    );
+};
+
 export default function TaxReports() {
+    const [currentPage, setCurrentPage] =
+        useState(1);
+
     const [reports, setReports] = useState([]);
+
+    const [bookings, setBookings] = useState([]);
+
     const [loading, setLoading] = useState(true);
-    const [searchTerm, setSearchTerm] = useState('');
+
+    const [searchTerm, setSearchTerm] =
+        useState('');
+
+    const ITEMS_PER_PAGE = 10;
 
     const BASE_API =
         process.env.NEXT_PUBLIC_API_URL ||
@@ -38,20 +87,45 @@ export default function TaxReports() {
     useEffect(() => {
         const fetchTaxData = async () => {
             try {
-                const res = await axios.get(
+                setLoading(true);
+
+                // TAX REPORTS
+                const taxRes = await axios.get(
                     `${BASE_API}/reports/get_tax_reports.php`
                 );
 
-                if (res.data?.success) {
+                // BOOKINGS / PAYMENTS
+                const bookingRes = await axios.get(
+                    `${BASE_API}/admin/get-master-records.php`
+                );
+
+                if (taxRes.data?.success) {
                     setReports(
-                        Array.isArray(res.data.data)
-                            ? res.data.data
+                        Array.isArray(
+                            taxRes.data.data
+                        )
+                            ? taxRes.data.data
+                            : []
+                    );
+                }
+
+                if (bookingRes.data?.success) {
+                    setBookings(
+                        Array.isArray(
+                            bookingRes.data.data
+                        )
+                            ? bookingRes.data.data
                             : []
                     );
                 }
             } catch (err) {
-                console.error('Tax fetch error:', err);
+                console.error(
+                    'Tax fetch error:',
+                    err
+                );
+
                 setReports([]);
+                setBookings([]);
             } finally {
                 setLoading(false);
             }
@@ -74,7 +148,9 @@ export default function TaxReports() {
             .map((r) => ({
                 date: r.payment_date
                     ? format(
-                          new Date(r.payment_date),
+                          new Date(
+                              r.payment_date
+                          ),
                           'dd MMM'
                       )
                     : 'N/A',
@@ -86,25 +162,46 @@ export default function TaxReports() {
             }));
     }, [reports]);
 
-    // FILTER
-    const filteredReports = useMemo(() => {
-        return reports.filter((r) => {
-            const dateText = r.payment_date
-                ? format(
-                      new Date(r.payment_date),
-                      'MMMM dd, yyyy'
-                  )
-                : '';
+    // SEARCH FILTER
+ const filteredReports = useMemo(() => {
+    return bookings.filter((r) => {
+        const search =
+            `${r.reference_no || ''}
+             ${r.customer_name || ''}
+             ${r.customer_email || ''}
+             ${r.vehicle_name || ''}
+             ${r.payment_status || ''}`
+                .toLowerCase();
 
-            return dateText
-                .toLowerCase()
-                .includes(searchTerm.toLowerCase());
-        });
-    }, [reports, searchTerm]);
+        return search.includes(
+            searchTerm.toLowerCase()
+        );
+    });
+}, [bookings, searchTerm]);
 
-    // TOTALS
+    // PAGINATION
+    const totalPages = Math.ceil(
+        filteredReports.length /
+            ITEMS_PER_PAGE
+    );
+
+    const paginatedReports = useMemo(() => {
+        const start =
+            (currentPage - 1) *
+            ITEMS_PER_PAGE;
+
+        const end = start + ITEMS_PER_PAGE;
+
+        return filteredReports.slice(
+            start,
+            end
+        );
+    }, [filteredReports, currentPage]);
+
+    // KPI TOTALS
     const totalRevenue = reports.reduce(
-        (acc, curr) => acc + num(curr.total_revenue),
+        (acc, curr) =>
+            acc + num(curr.total_revenue),
         0
     );
 
@@ -116,9 +213,100 @@ export default function TaxReports() {
         0
     );
 
-    const netRevenue = totalRevenue - totalTax;
+    const netRevenue =
+        totalRevenue - totalTax;
 
-    if (loading) return <LoadingSpinner />;
+    // EXPORT
+    const handleExportExcel = () => {
+    const excelData = bookings.map(
+        (row, index) => {
+            const gross = num(
+                row.total_paid ||
+                row.quoted_amount ||
+                0
+            );
+
+            const turnoverTax =
+                gross * 0.04;
+
+            const vatAmount =
+                gross * 0.16;
+
+            const totalTax =
+                turnoverTax + vatAmount;
+
+            const net =
+                gross - totalTax;
+
+            return {
+                '#': index + 1,
+
+                'Booking ID':
+                    row.reference_no ||
+                    'N/A',
+
+                Customer:
+                    row.customer_name ||
+                    'N/A',
+
+                Vehicle:
+                    row.vehicle_name ||
+                    'N/A',
+
+                'Booked On':
+                    row.booked_on
+                        ? format(
+                              new Date(
+                                  row.booked_on
+                              ),
+                              'MMMM dd, yyyy'
+                          )
+                        : 'N/A',
+
+                'Pickup Date':
+                    row.pickup_date ||
+                    'N/A',
+
+                'Return Date':
+                    row.return_date ||
+                    'N/A',
+
+                'Gross Revenue':
+                    gross,
+
+                TOT: turnoverTax,
+
+                VAT: vatAmount,
+
+                'Total Tax':
+                    totalTax,
+
+                'Net Revenue': net,
+
+                'Payment Status':
+                    row.payment_status ||
+                    'Pending',
+
+                'Booking Status':
+                    row.booking_status ||
+                    'Pending',
+            };
+        }
+    );
+
+    exportTransactionsToExcel(
+        excelData,
+        format(
+            new Date(),
+            'MMMM-yyyy'
+        )
+    );
+};
+
+    if (loading)
+        return (
+            <CityDriveLoader message="Syncing ZRA Tax Records..." />
+        );
 
     return (
         <div className="min-h-screen p-4 md:p-8 text-slate-900">
@@ -126,42 +314,57 @@ export default function TaxReports() {
 
                 {/* HERO */}
                 <div className="relative overflow-hidden rounded-[3rem] bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950 p-8 md:p-12 text-white shadow-[0_30px_80px_rgba(37,99,235,0.25)]">
-                    
+
                     <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-500/10 blur-3xl rounded-full"></div>
 
                     <div className="relative z-10 flex flex-col xl:flex-row justify-between gap-10">
-                        
+
                         <div className="max-w-2xl">
                             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 border border-white/10 backdrop-blur-md mb-6">
                                 <FaShieldAlt className="text-blue-400" />
+
                                 <span className="text-[11px] uppercase tracking-[0.2em] font-black text-blue-100">
-                                    ZRA AUTOMATED COMPLIANCE
+                                    ZRA AUTOMATED
+                                    COMPLIANCE
                                 </span>
                             </div>
 
                             <h1 className="text-5xl md:text-6xl font-black tracking-tight leading-none">
-                                Tax<span className="text-blue-400">Sync</span>
+                                Tax
+                                <span className="text-blue-400">
+                                    Sync
+                                </span>
                             </h1>
 
                             <p className="mt-5 text-slate-300 font-medium max-w-xl leading-relaxed">
-                                Advanced revenue intelligence, VAT
-                                automation and turnover tax monitoring
-                                for CityDrive Hire operations.
+                                Advanced revenue
+                                intelligence, VAT
+                                automation and
+                                turnover tax
+                                monitoring for
+                                CityDrive Hire
+                                operations.
                             </p>
 
                             <div className="mt-8 flex flex-wrap gap-4">
                                 <HeroBadge
-                                    icon={<FaCheckCircle />}
+                                    icon={
+                                        <FaCheckCircle />
+                                    }
                                     label="System Active"
                                 />
 
                                 <HeroBadge
-                                    icon={<FaDatabase />}
-                                    label={`${reports.length} Synced Records`}
+                                    icon={
+                                        <FaDatabase />
+                                    }
+                                    label={`${bookings.length} Bookings Synced`}
                                 />
 
                                 <HeroBadge
-                                    icon={<FaCalendarAlt />}
+                                    icon={
+                                        <FaCalendarAlt />
+                                    }
                                     label="2026 Fiscal Year"
                                 />
                             </div>
@@ -170,8 +373,10 @@ export default function TaxReports() {
                         {/* SEARCH */}
                         <div className="xl:w-[360px]">
                             <div className="bg-white/10 border border-white/10 backdrop-blur-xl rounded-[2rem] p-6">
+
                                 <p className="text-[11px] uppercase tracking-[0.2em] font-black text-blue-200 mb-5">
-                                    Search Financial Records
+                                    Search Booking
+                                    Records
                                 </p>
 
                                 <div className="relative">
@@ -179,11 +384,17 @@ export default function TaxReports() {
 
                                     <input
                                         type="text"
-                                        placeholder="Search payment date..."
-                                        value={searchTerm}
-                                        onChange={(e) =>
+                                        placeholder="Search booking, customer, vehicle..."
+                                        value={
+                                            searchTerm
+                                        }
+                                        onChange={(
+                                            e
+                                        ) =>
                                             setSearchTerm(
-                                                e.target.value
+                                                e
+                                                    .target
+                                                    .value
                                             )
                                         }
                                         className="w-full bg-white text-slate-900 rounded-2xl py-4 pl-12 pr-4 font-semibold outline-none focus:ring-4 focus:ring-blue-500/30"
@@ -191,10 +402,13 @@ export default function TaxReports() {
                                 </div>
 
                                 <div className="mt-6 bg-black/20 rounded-2xl p-5 border border-white/5">
+
                                     <div className="flex justify-between items-center">
+
                                         <div>
                                             <p className="text-[10px] uppercase font-black tracking-widest text-slate-400">
-                                                NET POSITION
+                                                NET
+                                                POSITION
                                             </p>
 
                                             <h2 className="text-3xl font-black mt-2">
@@ -207,14 +421,28 @@ export default function TaxReports() {
                                             <FaChartLine className="text-xl" />
                                         </div>
                                     </div>
+
+                                    <button
+                                        onClick={
+                                            handleExportExcel
+                                        }
+                                        className="w-full mt-5 bg-green-600 hover:bg-green-700 transition-all rounded-2xl py-4 flex items-center justify-center gap-3 font-black uppercase tracking-wider text-sm text-white shadow-lg shadow-green-900/20"
+                                    >
+                                        <FaFileExcel />
+
+                                        Export
+                                        Monthly
+                                        Report
+                                    </button>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                {/* STATS */}
+                {/* KPI */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+
                     <StatCard
                         title="Gross Revenue"
                         value={totalRevenue}
@@ -225,7 +453,9 @@ export default function TaxReports() {
                     <StatCard
                         title="Tax Liability"
                         value={totalTax}
-                        icon={<FaCalculator />}
+                        icon={
+                            <FaCalculator />
+                        }
                         color="orange"
                     />
 
@@ -239,15 +469,17 @@ export default function TaxReports() {
 
                 {/* CHART */}
                 <div className="bg-white rounded-[3rem] p-8 shadow-[0_20px_60px_rgba(15,23,42,0.08)] border border-slate-100">
-                    
+
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+
                         <div>
                             <p className="text-[11px] uppercase tracking-[0.2em] font-black text-blue-600">
                                 Revenue Analytics
                             </p>
 
                             <h2 className="text-3xl font-black text-slate-900 mt-2">
-                                Net Revenue Timeline
+                                Net Revenue
+                                Timeline
                             </h2>
                         </div>
 
@@ -258,8 +490,13 @@ export default function TaxReports() {
                     </div>
 
                     <div className="h-[340px]">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <AreaChart data={chartData}>
+                        <ResponsiveContainer
+                            width="100%"
+                            height="100%"
+                        >
+                            <AreaChart
+                                data={chartData}
+                            >
                                 <defs>
                                     <linearGradient
                                         id="gradientNet"
@@ -271,45 +508,52 @@ export default function TaxReports() {
                                         <stop
                                             offset="5%"
                                             stopColor="#2563eb"
-                                            stopOpacity={0.3}
+                                            stopOpacity={
+                                                0.3
+                                            }
                                         />
+
                                         <stop
                                             offset="95%"
                                             stopColor="#2563eb"
-                                            stopOpacity={0}
+                                            stopOpacity={
+                                                0
+                                            }
                                         />
                                     </linearGradient>
                                 </defs>
 
                                 <CartesianGrid
                                     strokeDasharray="3 3"
-                                    vertical={false}
+                                    vertical={
+                                        false
+                                    }
                                     stroke="#e2e8f0"
                                 />
 
                                 <XAxis
                                     dataKey="date"
-                                    axisLine={false}
-                                    tickLine={false}
-                                    tick={{
-                                        fontSize: 11,
-                                        fontWeight: 700,
-                                        fill: '#64748b',
-                                    }}
+                                    axisLine={
+                                        false
+                                    }
+                                    tickLine={
+                                        false
+                                    }
                                 />
 
                                 <YAxis
-                                    axisLine={false}
-                                    tickLine={false}
-                                    tick={{
-                                        fontSize: 11,
-                                        fontWeight: 700,
-                                        fill: '#64748b',
-                                    }}
+                                    axisLine={
+                                        false
+                                    }
+                                    tickLine={
+                                        false
+                                    }
                                 />
 
                                 <Tooltip
-                                    content={<CustomTooltip />}
+                                    content={
+                                        <CustomTooltip />
+                                    }
                                 />
 
                                 <Area
@@ -329,160 +573,318 @@ export default function TaxReports() {
                 <div className="bg-white rounded-[3rem] overflow-hidden border border-slate-100 shadow-[0_20px_60px_rgba(15,23,42,0.08)]">
 
                     <div className="px-8 py-7 border-b border-slate-100 flex flex-col md:flex-row justify-between gap-4">
+
                         <div>
                             <p className="text-[11px] uppercase tracking-[0.2em] font-black text-blue-600">
-                                Transaction Records
+                                Booking
+                                Payments
                             </p>
 
                             <h2 className="text-2xl font-black mt-2">
-                                Daily Tax Reports
+                                Monthly Booking
+                                Payments
                             </h2>
                         </div>
 
                         <div className="bg-slate-100 rounded-2xl px-5 py-3 flex items-center gap-3">
                             <FaCalendarAlt className="text-blue-600" />
+
                             <span className="font-bold text-slate-700 text-sm">
-                                {filteredReports.length} Records
+                                {
+                                    filteredReports.length
+                                }{' '}
+                                Records
                             </span>
                         </div>
                     </div>
 
                     <div className="overflow-x-auto">
-                        <table className="w-full min-w-[1000px]">
+                        <table className="w-full min-w-[1400px]">
+
                             <thead>
-                                <tr className="border-b border-slate-100 bg-slate-50/70">
-                                    <th className="text-left px-8 py-6 text-[11px] uppercase tracking-[0.2em] font-black text-slate-400">
-                                        Payment Date
-                                    </th>
+<tr className="border-b border-slate-100 bg-slate-50/70">
 
-                                    <th className="text-right px-8 py-6 text-[11px] uppercase tracking-[0.2em] font-black text-slate-400">
-                                        Gross Revenue
-                                    </th>
+    <th className="text-left px-8 py-6 text-[11px] uppercase tracking-[0.2em] font-black text-slate-400">
+        Booking
+    </th>
 
-                                    <th className="text-right px-8 py-6 text-[11px] uppercase tracking-[0.2em] font-black text-orange-500">
-                                        TOT (4%)
-                                    </th>
+    <th className="text-left px-8 py-6 text-[11px] uppercase tracking-[0.2em] font-black text-slate-400">
+        Customer
+    </th>
 
-                                    <th className="text-right px-8 py-6 text-[11px] uppercase tracking-[0.2em] font-black text-blue-500">
-                                        VAT (16%)
-                                    </th>
+    <th className="text-left px-8 py-6 text-[11px] uppercase tracking-[0.2em] font-black text-slate-400">
+        Vehicle
+    </th>
 
-                                    <th className="text-right px-8 py-6 text-[11px] uppercase tracking-[0.2em] font-black text-green-600">
-                                        Net Position
-                                    </th>
-                                </tr>
-                            </thead>
+    <th className="text-left px-8 py-6 text-[11px] uppercase tracking-[0.2em] font-black text-slate-400">
+        Dates
+    </th>
+
+    <th className="text-right px-8 py-6 text-[11px] uppercase tracking-[0.2em] font-black text-slate-400">
+        Amount Paid
+    </th>
+
+    <th className="text-center px-8 py-6 text-[11px] uppercase tracking-[0.2em] font-black text-slate-400">
+        Method
+    </th>
+
+    <th className="text-center px-8 py-6 text-[11px] uppercase tracking-[0.2em] font-black text-slate-400">
+        Booking Status
+    </th>
+
+    <th className="text-center px-8 py-6 text-[11px] uppercase tracking-[0.2em] font-black text-slate-400">
+        Payment Status
+    </th>
+
+</tr>
+</thead>
 
                             <tbody>
-                                {filteredReports.length > 0 ? (
-                                    filteredReports.map(
-                                        (row, idx) => {
-                                            const gross = num(
-                                                row.total_revenue
-                                            );
+    {filteredReports.length > 0 ? (
+        paginatedReports.map(
+            (row, idx) => {
 
-                                            const tax =
-                                                num(
-                                                    row.turnover_tax
-                                                ) +
-                                                num(
-                                                    row.vat_amount
-                                                );
+                const gross = num(
+                    row.total_paid ||
+                    row.quoted_amount ||
+                    0
+                );
 
-                                            const net =
-                                                gross - tax;
+                const turnoverTax =
+                    gross * 0.04;
 
-                                            return (
-                                                <tr
-                                                    key={idx}
-                                                    className="border-b border-slate-50 hover:bg-blue-50/40 transition-all group"
-                                                >
-                                                    <td className="px-8 py-7">
-                                                        <div className="flex items-center gap-4">
-                                                            <div className="w-14 h-14 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-500 font-black group-hover:bg-blue-600 group-hover:text-white transition-all">
-                                                                {row.payment_date
-                                                                    ? format(
-                                                                          new Date(
-                                                                              row.payment_date
-                                                                          ),
-                                                                          'dd'
-                                                                      )
-                                                                    : '--'}
-                                                            </div>
+                const vatAmount =
+                    gross * 0.16;
 
-                                                            <div>
-                                                                <p className="font-black text-slate-900 text-base">
-                                                                    {row.payment_date
-                                                                        ? format(
-                                                                              new Date(
-                                                                                  row.payment_date
-                                                                              ),
-                                                                              'MMMM dd, yyyy'
-                                                                          )
-                                                                        : 'Pending'}
-                                                                </p>
+                const tax =
+                    turnoverTax +
+                    vatAmount;
 
-                                                                <p className="text-[10px] uppercase tracking-widest text-slate-400 font-black mt-1">
-                                                                    Financial Record
-                                                                </p>
-                                                            </div>
-                                                        </div>
-                                                    </td>
+                const net =
+                    gross - tax;
 
-                                                    <td className="px-8 py-7 text-right font-black text-slate-700 font-mono">
-                                                        K{' '}
-                                                        {gross.toLocaleString()}
-                                                    </td>
+                return (
+                    <tr
+                        key={idx}
+                        className="border-b border-slate-50 hover:bg-blue-50/40 transition-all group"
+                    >
 
-                                                    <td className="px-8 py-7 text-right font-black text-orange-600 font-mono">
-                                                        -K{' '}
-                                                        {num(
-                                                            row.turnover_tax
-                                                        ).toLocaleString()}
-                                                    </td>
+                        {/* BOOKING */}
+                        <td className="px-8 py-7">
+                            <div>
+                                <p className="font-black text-slate-900">
+                                    {row.reference_no ||
+                                        'N/A'}
+                                </p>
 
-                                                    <td className="px-8 py-7 text-right font-black text-blue-600 font-mono">
-                                                        -K{' '}
-                                                        {num(
-                                                            row.vat_amount
-                                                        ).toLocaleString()}
-                                                    </td>
+                                <p className="text-[10px] uppercase tracking-widest text-slate-400 font-black mt-1">
+                                    {row.booked_on
+                                        ? format(
+                                              new Date(
+                                                  row.booked_on
+                                              ),
+                                              'MMMM dd, yyyy'
+                                          )
+                                        : 'No Date'}
+                                </p>
+                            </div>
+                        </td>
 
-                                                    <td className="px-8 py-7 text-right">
-                                                        <div className="inline-flex items-center px-5 py-3 rounded-2xl bg-green-100 text-green-700 font-black shadow-sm group-hover:scale-105 transition-transform">
-                                                            K{' '}
-                                                            {net.toLocaleString()}
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                            );
-                                        }
-                                    )
-                                ) : (
-                                    <tr>
-                                        <td
-                                            colSpan={5}
-                                            className="py-20 text-center"
-                                        >
-                                            <div className="flex flex-col items-center">
-                                                <div className="w-20 h-20 rounded-full bg-slate-100 flex items-center justify-center mb-5">
-                                                    <FaSearch className="text-2xl text-slate-400" />
-                                                </div>
+                        {/* CUSTOMER */}
+                        <td className="px-8 py-7">
+                            <div>
+                                <p className="font-black text-slate-900">
+                                    {row.customer_name ||
+                                        'Unknown'}
+                                </p>
 
-                                                <h3 className="text-xl font-black text-slate-700">
-                                                    No Records Found
-                                                </h3>
+                                <p className="text-xs text-slate-400 mt-1">
+                                    {row.customer_email ||
+                                        ''}
+                                </p>
+                            </div>
+                        </td>
 
-                                                <p className="text-slate-400 mt-2">
-                                                    Try another search
-                                                    keyword.
-                                                </p>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                )}
-                            </tbody>
+                        {/* VEHICLE */}
+                        <td className="px-8 py-7">
+                            <div>
+                                <p className="font-black text-slate-900">
+                                    {row.vehicle_name ||
+                                        'Vehicle'}, {row.plate_number || 'N/A'}
+                                </p>
+
+                                <p className="text-xs text-slate-400 mt-1">
+                                    {row.transmission ||
+                                        ''}
+                                </p>
+                            </div>
+                        </td>
+
+                        {/* DATES */}
+                        <td className="px-8 py-7">
+                            <div className="text-sm font-bold text-slate-700">
+                                {row.pickup_date
+                                    ? format(
+                                          new Date(
+                                              row.pickup_date
+                                          ),
+                                          'dd MMM'
+                                      )
+                                    : '--'}
+
+                                {' → '}
+
+                                {row.return_date
+                                    ? format(
+                                          new Date(
+                                              row.return_date
+                                          ),
+                                          'dd MMM'
+                                      )
+                                    : '--'}
+                            </div>
+                        </td>
+
+                   {/* PAYMENT */}
+<td className="px-8 py-7 text-right font-black text-slate-700 font-mono">
+    K {gross.toLocaleString()}
+</td>
+
+{/* METHOD */}
+<td className="px-8 py-7 text-center">
+    <div className="inline-flex px-4 py-2 rounded-full text-xs font-black uppercase tracking-wider bg-blue-100 text-blue-700">
+        {row.payment_method || 'N/A'}
+    </div>
+</td>
+
+{/* BOOKING STATUS */}
+<td className="px-8 py-7 text-center">
+    <div className="inline-flex px-4 py-2 rounded-full text-xs font-black uppercase tracking-wider bg-slate-100 text-slate-700">
+        {row.booking_status || 'pending'}
+    </div>
+</td>
+
+{/* PAYMENT STATUS */}
+<td className="px-8 py-7 text-center">
+    <div
+        className={`inline-flex px-4 py-2 rounded-full text-xs font-black uppercase tracking-wider ${
+            row.payment_status === 'Verified'
+                ? 'bg-green-100 text-green-700'
+                : row.payment_status === 'Failed'
+                ? 'bg-red-100 text-red-700'
+                : 'bg-orange-100 text-orange-700'
+        }`}
+    >
+        {row.payment_status || 'Pending'}
+    </div>
+</td>
+
+                    </tr>
+                );
+            }
+        )
+    ) : (
+        <tr>
+            <td
+                colSpan={9}
+                className="py-20 text-center"
+            >
+                <div className="flex flex-col items-center">
+
+                    <div className="w-20 h-20 rounded-full bg-slate-100 flex items-center justify-center mb-5">
+                        <FaSearch className="text-2xl text-slate-400" />
+                    </div>
+
+                    <h3 className="text-xl font-black text-slate-700">
+                        No Records Found
+                    </h3>
+
+                    <p className="text-slate-400 mt-2">
+                        Try another search keyword.
+                    </p>
+                </div>
+            </td>
+        </tr>
+    )}
+</tbody>
                         </table>
+
+                        {/* PAGINATION */}
+                        <div className="px-8 py-6 border-t border-slate-100 flex flex-col md:flex-row items-center justify-between gap-5">
+
+                            <div className="text-sm font-bold text-slate-500">
+                                Showing{' '}
+                                <span className="text-slate-900">
+                                    {
+                                        paginatedReports.length
+                                    }
+                                </span>{' '}
+                                of{' '}
+                                <span className="text-slate-900">
+                                    {
+                                        filteredReports.length
+                                    }
+                                </span>{' '}
+                                records
+                            </div>
+
+                            <div className="flex items-center gap-3">
+
+                                <button
+                                    onClick={() =>
+                                        setCurrentPage(
+                                            (
+                                                prev
+                                            ) =>
+                                                Math.max(
+                                                    prev -
+                                                        1,
+                                                    1
+                                                )
+                                        )
+                                    }
+                                    disabled={
+                                        currentPage ===
+                                        1
+                                    }
+                                    className="w-12 h-12 rounded-2xl bg-slate-100 hover:bg-slate-200 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center transition-all"
+                                >
+                                    <FaChevronLeft />
+                                </button>
+
+                                <div className="px-5 py-3 rounded-2xl bg-blue-600 text-white font-black text-sm min-w-[120px] text-center">
+                                    Page{' '}
+                                    {
+                                        currentPage
+                                    }{' '}
+                                    /{' '}
+                                    {totalPages ||
+                                        1}
+                                </div>
+
+                                <button
+                                    onClick={() =>
+                                        setCurrentPage(
+                                            (
+                                                prev
+                                            ) =>
+                                                Math.min(
+                                                    prev +
+                                                        1,
+                                                    totalPages
+                                                )
+                                        )
+                                    }
+                                    disabled={
+                                        currentPage ===
+                                        totalPages
+                                    }
+                                    className="w-12 h-12 rounded-2xl bg-slate-100 hover:bg-slate-200 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center transition-all"
+                                >
+                                    <FaChevronRight />
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -493,6 +895,7 @@ export default function TaxReports() {
 function HeroBadge({ icon, label }) {
     return (
         <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 border border-white/10 backdrop-blur-md">
+
             <span className="text-blue-400">
                 {icon}
             </span>
@@ -504,7 +907,12 @@ function HeroBadge({ icon, label }) {
     );
 }
 
-function StatCard({ title, value, icon, color }) {
+function StatCard({
+    title,
+    value,
+    icon,
+    color,
+}) {
     const styles = {
         blue: {
             bg: 'bg-blue-50',
@@ -530,6 +938,7 @@ function StatCard({ title, value, icon, color }) {
             className={`${styles[color].bg} rounded-[2.5rem] p-8 border border-white shadow-[0_20px_50px_rgba(15,23,42,0.06)] hover:-translate-y-1 transition-all`}
         >
             <div className="flex items-center justify-between mb-8">
+
                 <div
                     className={`w-14 h-14 rounded-2xl ${styles[color].icon} text-white flex items-center justify-center text-xl shadow-lg`}
                 >
@@ -552,51 +961,48 @@ function StatCard({ title, value, icon, color }) {
                     K
                 </span>
 
-                {Number(value || 0).toLocaleString()}
+                {Number(
+                    value || 0
+                ).toLocaleString()}
             </h2>
         </div>
     );
 }
 
-function CustomTooltip({ active, payload }) {
-    if (active && payload && payload.length) {
+function CustomTooltip({
+    active,
+    payload,
+}) {
+    if (
+        active &&
+        payload &&
+        payload.length
+    ) {
         return (
             <div className="bg-slate-950 border border-slate-800 rounded-2xl p-5 shadow-2xl">
+
                 <p className="text-[10px] uppercase tracking-[0.2em] font-black text-blue-400 mb-2">
-                    {payload[0].payload.date}
+                    {
+                        payload[0].payload
+                            .date
+                    }
                 </p>
 
                 <h3 className="text-2xl font-black text-white">
                     K{' '}
                     {Number(
-                        payload[0].value || 0
+                        payload[0].value ||
+                            0
                     ).toLocaleString()}
                 </h3>
 
                 <p className="text-[10px] uppercase tracking-widest text-slate-500 font-bold mt-2">
-                    Net Revenue Position
+                    Net Revenue
+                    Position
                 </p>
             </div>
         );
     }
 
     return null;
-}
-
-function LoadingSpinner() {
-    return (
-        <div className="flex items-center justify-center min-h-screen bg-[#F5F7FB]">
-            <div className="text-center">
-                <div className="relative w-20 h-20 mx-auto mb-6">
-                    <div className="absolute inset-0 border-4 border-blue-100 rounded-full"></div>
-
-                    <div className="absolute inset-0 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-                </div>
-
-                <p className="text-[11px] uppercase tracking-[0.3em] font-black text-slate-400">
-                    Loading Financial Intelligence
-                </p>
-            </div>
-        </div>
-    );
 }

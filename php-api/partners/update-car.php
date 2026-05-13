@@ -2,6 +2,7 @@
 // File: admin/update-car.php
 require_once '../config/origin.php';
 require_once '../config/config.php';
+require_once '../config/NotificationHelper.php';
 
 header('Content-Type: application/json');
 
@@ -118,6 +119,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         ]);
 
         $pdo->commit();
+        
+        NotificationHelper::create(
+    $pdo,
+    'Vehicle Updated',
+    $name . ' vehicle details were updated.',
+    'info',
+    $vehicleId,
+    'vehicle'
+);
         echo json_encode(["success" => true, "message" => "Vehicle updated successfully"]);
 
     } catch (Exception $e) {

@@ -240,5 +240,282 @@ public static function sendRefundProcessedEmail($email, $name, $bookingId, $refu
     return self::send($email, $subject, $message);
 }
 
+public static function sendSupportReply(
+    $toEmail,
+    $customerName,
+    $subject,
+    $replyMessage
+) {
+
+    $content = "
+        <div style='text-align:center; margin-bottom:30px;'>
+
+            <div style='
+                width:70px;
+                height:70px;
+                margin:auto;
+                border-radius:20px;
+                background:linear-gradient(135deg,#16a34a,#22c55e);
+                text-align:center;
+                line-height:70px;
+                font-size:30px;
+                color:white;
+                font-weight:bold;
+                box-shadow:0 15px 30px rgba(34,197,94,0.25);
+            '>
+                ✉
+            </div>
+
+        </div>
+
+        <h2 style='
+            font-size:28px;
+            font-weight:900;
+            color:#0f172a;
+            margin-top:0;
+            margin-bottom:15px;
+            text-align:center;
+        '>
+            Support Response
+        </h2>
+
+        <p style='
+            font-size:15px;
+            color:#475569;
+            line-height:1.8;
+            margin-bottom:20px;
+        '>
+            Hello <strong>$customerName</strong>,
+        </p>
+
+        <p style='
+            font-size:15px;
+            color:#475569;
+            line-height:1.8;
+        '>
+            Thank you for contacting the CityDrive Hire support team.
+            Below is our response regarding your inquiry:
+        </p>
+
+        <div style='
+            margin-top:25px;
+            background:#f8fafc;
+            border:1px solid #e2e8f0;
+            border-left:5px solid #16a34a;
+            border-radius:18px;
+            padding:25px;
+        '>
+
+            <p style='
+                margin:0 0 12px 0;
+                font-size:11px;
+                letter-spacing:2px;
+                text-transform:uppercase;
+                font-weight:800;
+                color:#16a34a;
+            '>
+                SUPPORT MESSAGE
+            </p>
+
+            <div style='
+                font-size:15px;
+                color:#334155;
+                line-height:1.9;
+                white-space:pre-line;
+            '>
+                $replyMessage
+            </div>
+
+        </div>
+
+        <div style='
+            margin-top:30px;
+            padding:20px;
+            border-radius:16px;
+            background:#eff6ff;
+            border:1px solid #bfdbfe;
+        '>
+
+            <p style='
+                margin:0;
+                color:#1e3a8a;
+                font-size:14px;
+                line-height:1.8;
+            '>
+                If you need additional assistance, simply reply to this email
+                or contact our support team directly.
+            </p>
+
+        </div>
+
+        <div style='text-align:center; margin-top:35px;'>
+
+            <a href='https://citydrivehire.com/contact'
+               style='
+                    display:inline-block;
+                    background:#16a34a;
+                    color:white;
+                    padding:15px 28px;
+                    border-radius:14px;
+                    text-decoration:none;
+                    font-weight:800;
+                    font-size:14px;
+                    box-shadow:0 10px 25px rgba(22,163,74,0.25);
+               '>
+                Contact Support
+            </a>
+
+        </div>
+    ";
+
+    return self::sendBrandedEmail(
+        $toEmail,
+        "Re: $subject",
+        $content
+    );
+}
+
+public static function sendHelpSupportReplyEmail(
+    $toEmail,
+    $customerName,
+    $ticketId,
+    $subject,
+    $replyMessage
+) {
+
+    $content = "
+        <div style='text-align:center; margin-bottom:30px;'>
+
+            <div style='
+                width:70px;
+                height:70px;
+                margin:auto;
+                border-radius:20px;
+                background:linear-gradient(135deg,#16a34a,#22c55e);
+                text-align:center;
+                line-height:70px;
+                font-size:30px;
+                color:white;
+                font-weight:bold;
+                box-shadow:0 15px 30px rgba(34,197,94,0.25);
+            '>
+                ✉
+            </div>
+
+        </div>
+
+        <h2 style='
+            font-size:28px;
+            font-weight:900;
+            color:#0f172a;
+            margin-top:0;
+            margin-bottom:10px;
+            text-align:center;
+        '>
+            Ticket Response
+        </h2>
+
+        <p style='
+            text-align:center;
+            font-size:13px;
+            color:#64748b;
+            margin-bottom:25px;
+        '>
+            Ticket ID: <strong>$ticketId</strong>
+        </p>
+
+        <p style='
+            font-size:15px;
+            color:#475569;
+            line-height:1.8;
+        '>
+            Hello <strong>$customerName</strong>,
+        </p>
+
+        <p style='
+            font-size:15px;
+            color:#475569;
+            line-height:1.8;
+        '>
+            We have responded to your support request:
+        </p>
+
+        <div style='
+            margin-top:25px;
+            background:#f8fafc;
+            border:1px solid #e2e8f0;
+            border-left:5px solid #16a34a;
+            border-radius:18px;
+            padding:25px;
+        '>
+
+            <p style='
+                margin:0 0 12px 0;
+                font-size:11px;
+                letter-spacing:2px;
+                text-transform:uppercase;
+                font-weight:800;
+                color:#16a34a;
+            '>
+                SUPPORT RESPONSE
+            </p>
+
+            <div style='
+                font-size:15px;
+                color:#334155;
+                line-height:1.9;
+                white-space:pre-line;
+            '>
+                $replyMessage
+            </div>
+
+        </div>
+
+        <div style='
+            margin-top:30px;
+            padding:20px;
+            border-radius:16px;
+            background:#eff6ff;
+            border:1px solid #bfdbfe;
+        '>
+
+            <p style='
+                margin:0;
+                color:#1e3a8a;
+                font-size:14px;
+                line-height:1.8;
+            '>
+                If you still need help, reply to this email or open another ticket.
+            </p>
+
+        </div>
+
+        <div style='text-align:center; margin-top:35px;'>
+
+            <a href='https://citydrivehire.com/support'
+               style='
+                    display:inline-block;
+                    background:#16a34a;
+                    color:white;
+                    padding:15px 28px;
+                    border-radius:14px;
+                    text-decoration:none;
+                    font-weight:800;
+                    font-size:14px;
+               '>
+                Visit Support Center
+            </a>
+
+        </div>
+    ";
+
+    return self::sendBrandedEmail(
+        $toEmail,
+        "Re: $subject (#$ticketId)",
+        $content
+    );
+}
+
+
     
 }
